@@ -27,15 +27,20 @@ Då finns färsk data alltid här, och Claude kan analysera den när du frågar.
 
 ### Alternativ C — Apple Genvägar (gratis, halvautomatiskt)
 
-Appen **Genvägar** (Shortcuts) kan läsa hälsoprover ("Hitta hälsoprover") och skicka dem vidare. En automation som varje kväll POST:ar dagens nyckeltal (steg, träning, sömn) till GitHub:s API skriver in datan i `data/` utan extra appar. Be Claude bygga genvägen åt dig om du vill gå den vägen.
+Appen **Genvägar** (Shortcuts) kan läsa hälsoprover ("Hitta hälsoprover") och skicka dem vidare. En automation som varje kväll skickar dagens nyckeltal (steg, energi, distans, vilopuls, sömn) till GitHub:s API skriver in datan i `data/genvagar/` utan extra appar.
+
+**→ Komplett byggguide: [docs/genvag-guide.md](docs/genvag-guide.md)** (ca 15 min att sätta upp). Slå ihop de dagliga filerna till CSV med `python3 scripts/merge_genvagar.py`.
 
 ## Struktur
 
 ```
 data/                    Rålägg export.zip / export.xml här (versioneras inte)
-data/processed/          CSV-filer som parsern genererar
+data/genvagar/           Dagliga JSON-filer från Genvägar-automationen
+data/processed/          CSV-filer som skripten genererar
 data/traningslogg.csv    Manuell träningslogg (fyll i själv eller be Claude)
 scripts/parse_apple_health.py   Parser: export.xml → CSV + sammanfattning
+scripts/merge_genvagar.py       Slår ihop Genvägar-JSON → CSV
+docs/genvag-guide.md            Byggguide för Genvägar-automationen
 ```
 
 ## Använda parsern
