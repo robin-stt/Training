@@ -1,0 +1,5 @@
+# Råa Apple Hälsa-exporter är stora och innehåller allt — versionera inte dem,
+# bara de bearbetade CSV-filerna.
+data/export*.zip
+data/export*.xml
+data/apple_health_export/
