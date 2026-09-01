@@ -1030,7 +1030,9 @@ function ritaHero() {
     box.appendChild(r);
   }
   const v = document.createElement("p"); v.className = "vo2";
-  v.textContent = `Konditionsvärde ${fmt1(k.vo2)} ml/kg/min` + (k.uppskattad ? " — uppskattat från din vilopuls och ålder" : " — mätt av din klocka");
+  v.textContent = k.uppskattad
+    ? `Estimerat VO2max ${fmt1(k.vo2)} — uträknat från din vilopuls och ålder`
+    : `VO2max ${fmt1(k.vo2)} — mätt av din klocka`;
   box.appendChild(v);
 
   const alderD = dataAlder();
@@ -1115,11 +1117,11 @@ function ritaTrend() {
   if (serie.length < 3) { box.hidden = true; return; }
   box.hidden = false;
   ritaDiagram(box, {
-    titel: "Din konditionsutveckling",
-    under: "Uppskattat konditionsvärde över tid — högre är bättre",
+    titel: "Ditt VO2max över tid",
+    under: "Estimerat VO2max — högre betyder bättre kondition",
     punkter: serie.map(p => ({ x: fmtDatum(p.datum), etikett: p.datum, v: [p.v] })),
     farg: cssVar("--blue"), nollbas: false,
-    yFmt: v => fmt1(v), tipFmt: v => fmt1(v) + " ml/kg/min",
+    yFmt: v => fmt1(v), tipFmt: v => "VO2max " + fmt1(v),
   });
 }
 function kort(titel, under) {
@@ -1220,7 +1222,7 @@ function coachData() {
     profil: { alder: alder(), kon: P.profil.kon || null, maxpuls: maxpuls() ? maxpuls().v : null },
     mal: P.mal,
     datans_alder_dagar: dataAlder(),
-    kondition: k ? { niva: k.niva, percentil_i_aldersgrupp: k.percentil, konditionsvarde: k.vo2, uppskattat: k.uppskattad } : null,
+    kondition: k ? { niva: k.niva, percentil_i_aldersgrupp: k.percentil, vo2max: k.vo2, vo2max_estimerat: k.uppskattad } : null,
     denna_vecka: v ? { veckonr: v.veckonr, dagar_gangna: v.gangna, pass: v.pass, traningstid_min: v.tid, prognos_pass_hela_veckan: v.prognosPass ? Math.round(v.prognosPass * 10) / 10 : null, prognos_tid_hela_veckan: v.prognosTid ? Math.round(v.prognosTid) : null } : null,
     forra_veckan: v ? { pass: v.passFg, traningstid_min: v.tidFg } : null,
     traningstid_min_per_vecka: senasteVeckor,
