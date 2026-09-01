@@ -18,12 +18,9 @@ Exporten innehåller *allt* (steg, puls, sömn, träningspass, vikt m.m.) sedan 
 
 ### Alternativ B — Automatisk export med appen "Health Auto Export"
 
-Appen [Health Auto Export](https://apps.apple.com/app/health-auto-export-json-csv/id1115567069) (App Store) kan på schema (dagligen/veckovis) skicka valda mätvärden som JSON/CSV till:
+Appen [Health Auto Export](https://apps.apple.com/app/health-auto-export-json-csv/id1115567069) (App Store) skickar på schema valda mätvärden som JSON till en liten gratis Cloudflare Worker (färdig kod i `integrations/cloudflare-worker/`), som skriver in dem i `data/health-auto-export/` här i repot. Då finns färsk data alltid här, och Claude kan analysera den när du frågar.
 
-- en mapp i iCloud Drive eller Dropbox, eller
-- ett REST-API — t.ex. direkt till detta GitHub-repo via GitHub:s API.
-
-Då finns färsk data alltid här, och Claude kan analysera den när du frågar.
+**→ Komplett setup-guide: [docs/health-auto-export-guide.md](docs/health-auto-export-guide.md)** (ca 15 min). Slå ihop exporterna till CSV med `python3 scripts/merge_hae.py`.
 
 ### Alternativ C — Apple Genvägar (gratis, halvautomatiskt)
 
@@ -36,11 +33,15 @@ Appen **Genvägar** (Shortcuts) kan läsa hälsoprover ("Hitta hälsoprover") oc
 ```
 data/                    Rålägg export.zip / export.xml här (versioneras inte)
 data/genvagar/           Dagliga JSON-filer från Genvägar-automationen
+data/health-auto-export/ Exporter från Health Auto Export-appen
 data/processed/          CSV-filer som skripten genererar
 data/traningslogg.csv    Manuell träningslogg (fyll i själv eller be Claude)
 scripts/parse_apple_health.py   Parser: export.xml → CSV + sammanfattning
 scripts/merge_genvagar.py       Slår ihop Genvägar-JSON → CSV
+scripts/merge_hae.py            Slår ihop Health Auto Export-JSON → CSV
+integrations/cloudflare-worker/ Mottagare för Health Auto Export
 docs/genvag-guide.md            Byggguide för Genvägar-automationen
+docs/health-auto-export-guide.md  Setup-guide för Health Auto Export
 ```
 
 ## Använda parsern
