@@ -1298,6 +1298,20 @@ function ritaChat() {
   }
 }
 
+// Besökare utan Claude-konto ska förstå varför coachen inte syns, i stället
+// för att mötas av ett hål där en utlovad funktion skulle ha stått.
+function coachEjTillganglig() {
+  const c = $("coachCard");
+  c.textContent = "";
+  const huvud = document.createElement("div"); huvud.className = "coach-head";
+  const av = document.createElement("span"); av.className = "coach-avatar"; av.textContent = "🎽"; av.setAttribute("aria-hidden", "true");
+  const kol = document.createElement("div");
+  const h = document.createElement("h2"); h.textContent = "Din coach";
+  const p = document.createElement("p"); p.className = "sub"; p.style.margin = "0";
+  p.textContent = "Coachens tips kräver ett Claude-konto och visas när sidan öppnas via Claude. Din konditionsnivå, veckan och alla grafer fungerar ändå.";
+  kol.append(h, p); huvud.append(av, kol); c.appendChild(huvud);
+}
+
 let ctl = null;
 function coachFel(kod, el, msg) {
   if (kod === "not_granted" || kod === "sampling_disabled") {
@@ -1431,8 +1445,8 @@ ritaChat();
   if (window.claude && claude.use) {
     sampleFn = await claude.use("sample").catch(() => null);
     downloadsNs = await claude.use("downloads").catch(() => null);
-    if (!sampleFn) $("coachCard").hidden = true;
+    if (!sampleFn) coachEjTillganglig();
     if (downloadsNs) $("btnBackup").hidden = false;
-  } else $("coachCard").hidden = true;
+  } else coachEjTillganglig();
 })();
 </script>
