@@ -67,14 +67,38 @@ export async function sha256Hex(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+const avsandare = (request: Request) => request.headers.get("CF-Connecting-IP") || "okand";
+
+/**
+ * Skapar tabellen om den saknas och kör om. Databasen kan släpa efter koden
+ * vid en utrullning, och då ska registreringen inte falla — den ska laga sig.
+ */
+async function medForsokstabell<T>(env: Env, arbete: () => Promise<T>): Promise<T> {
+  try {
+    return await arbete();
+  } catch (fel) {
+    if (!/no such table/i.test(String(fel))) throw fel;
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS forsok (
+         nyckel TEXT PRIMARY KEY,
+         antal INTEGER NOT NULL DEFAULT 0,
+         nollstalls TEXT NOT NULL
+       )`,
+    ).run();
+    return await arbete();
+  }
+}
+
 /**
  * Räknar felförsök per avsändare. Eftersom en självvald kod går att gissa är
  * det här skyddet som faktiskt håller — inte hashningen.
  */
 export async function kollaForsok(env: Env, request: Request): Promise<boolean> {
-  const ip = request.headers.get("CF-Connecting-IP") || "okand";
-  const rad = await env.DB.prepare("SELECT antal, nollstalls FROM forsok WHERE nyckel = ?")
-    .bind(ip).first<{ antal: number; nollstalls: string }>();
+  const ip = avsandare(request);
+  const rad = await medForsokstabell(env, () =>
+    env.DB.prepare("SELECT antal, nollstalls FROM forsok WHERE nyckel = ?")
+      .bind(ip).first<{ antal: number; nollstalls: string }>(),
+  );
   if (!rad) return true;
   if (Date.parse(rad.nollstalls) < Date.now()) {
     await env.DB.prepare("DELETE FROM forsok WHERE nyckel = ?").bind(ip).run();
@@ -84,17 +108,20 @@ export async function kollaForsok(env: Env, request: Request): Promise<boolean> 
 }
 
 export async function raknaFelforsok(env: Env, request: Request): Promise<void> {
-  const ip = request.headers.get("CF-Connecting-IP") || "okand";
+  const ip = avsandare(request);
   const nollstalls = new Date(Date.now() + SPARR_MINUTER * 60000).toISOString();
-  await env.DB.prepare(
-    `INSERT INTO forsok (nyckel, antal, nollstalls) VALUES (?, 1, ?)
-     ON CONFLICT(nyckel) DO UPDATE SET antal = antal + 1`,
-  ).bind(ip, nollstalls).run();
+  await medForsokstabell(env, () =>
+    env.DB.prepare(
+      `INSERT INTO forsok (nyckel, antal, nollstalls) VALUES (?, 1, ?)
+       ON CONFLICT(nyckel) DO UPDATE SET antal = antal + 1`,
+    ).bind(ip, nollstalls).run(),
+  );
 }
 
 export async function nollstallForsok(env: Env, request: Request): Promise<void> {
-  const ip = request.headers.get("CF-Connecting-IP") || "okand";
-  await env.DB.prepare("DELETE FROM forsok WHERE nyckel = ?").bind(ip).run();
+  await medForsokstabell(env, () =>
+    env.DB.prepare("DELETE FROM forsok WHERE nyckel = ?").bind(avsandare(request)).run(),
+  );
 }
 
 export async function skapaSession(env: Env, anvandareId: string): Promise<string> {
