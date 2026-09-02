@@ -3,15 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Behåll variabler som satts i Cloudflares kontrollpanel. Utan den här raden
-# skriver varje deploy över dem med det som står i # Nyckeln ligger i kontots Secrets Store och kopplas in här i konfigurationen
-# i stället för i kontrollpanelen, så att varje bygge garanterat får med den.
-[[secrets_store_secrets]]
-binding = "ANTHROPIC_NYCKEL"
-store_id = "9db4c419cbc74aa2a99375503ed470e8"
-secret_name = "ANTHROPIC_API_KEY"
-
-[vars] nedan.
+# Behåll variabler som satts i Cloudflares kontrollpanel; annars skriver
+# varje deploy över dem med innehållet i vars-sektionen längst ner.
 keep_vars = true
 
 # Frontend ligger i public/ och serveras direkt av Cloudflare.
@@ -25,6 +18,13 @@ binding = "DB"
 database_name = "dagsformen"
 # Skapad i Cloudflares kontrollpanel.
 database_id = "55536946-9e71-4063-9a78-bc98187be32a"
+
+# API-nyckeln ligger i kontots Secrets Store och kopplas in här i
+# konfigurationen, så att varje bygge garanterat får med den.
+[[secrets_store_secrets]]
+binding = "ANTHROPIC_NYCKEL"
+store_id = "9db4c419cbc74aa2a99375503ed470e8"
+secret_name = "ANTHROPIC_API_KEY"
 
 [vars]
 # Ungefär 200 kr. När månadens uppskattade kostnad passerar taket pausas
