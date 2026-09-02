@@ -1,7 +1,20 @@
-/** Konton och sessioner. Lösenord hashas med PBKDF2-SHA256 via WebCrypto. */
+/**
+ * Inloggning med en slumpad kod i stället för e-post och lösenord.
+ *
+ * Koden skapas av servern vid första besöket och är både identitet och
+ * hemlighet. Den har 80 bitars entropi, vilket inte går att gissa sig till, så
+ * ingen långsam lösenordshashning behövs — ett SHA-256-uppslag räcker och tar
+ * mikrosekunder. Det är därför appen får plats på Cloudflares gratisnivå.
+ *
+ * Priset är att koden inte kan återställas: tappar man bort den kommer man inte
+ * in i sitt konto igen. Frontenden säger det tydligt när koden visas.
+ */
 
-const ITERATIONER = 210000;
 const SESSION_DYGN = 30;
+
+// Utan I, L, O, U och siffrorna 0/1 — tecken som lätt förväxlas vid avskrift.
+const ALFABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789";
+const KOD_TECKEN = 16;
 
 export interface Env {
   DB: D1Database;
@@ -11,56 +24,36 @@ export interface Env {
   SVAR_PER_ANVANDARE: string;
 }
 
-function b64(bytes: Uint8Array): string {
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s);
-}
-function franB64(s: string): Uint8Array {
-  const bin = atob(s);
-  const ut = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) ut[i] = bin.charCodeAt(i);
-  return ut;
-}
-
-async function pbkdf2(losenord: string, salt: Uint8Array, iterationer: number): Promise<Uint8Array> {
-  const nyckel = await crypto.subtle.importKey("raw", new TextEncoder().encode(losenord), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: salt as BufferSource, iterations: iterationer, hash: "SHA-256" },
-    nyckel,
-    256,
-  );
-  return new Uint8Array(bits);
+/** Returnerar en kod i formen ABCD-EFGH-JKMN-PQRS. */
+export function skapaKod(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(KOD_TECKEN));
+  let kod = "";
+  for (let i = 0; i < KOD_TECKEN; i++) {
+    // Modulo mot 30 av 256 ger en försumbar skevhet (256 = 8×30 + 16), och
+    // entropin ligger ändå långt över vad som behövs.
+    kod += ALFABET[bytes[i] % ALFABET.length];
+  }
+  return (kod.match(/.{1,4}/g) as string[]).join("-");
 }
 
-export async function hashaLosenord(losenord: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await pbkdf2(losenord, salt, ITERATIONER);
-  return `pbkdf2$${ITERATIONER}$${b64(salt)}$${b64(hash)}`;
+/** Gör koden jämförbar oavsett gemener, mellanslag eller bindestreck. */
+export function normaliseraKod(kod: unknown): string | null {
+  if (typeof kod !== "string" || kod.length > 64) return null;
+  const rensad = kod.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (rensad.length !== KOD_TECKEN) return null;
+  for (const tecken of rensad) if (!ALFABET.includes(tecken)) return null;
+  return rensad;
 }
 
-/** Konstanttidsjämförelse så svarstiden inte avslöjar hur mycket som stämde. */
-export async function verifieraLosenord(losenord: string, lagrat: string): Promise<boolean> {
-  const delar = lagrat.split("$");
-  if (delar.length !== 4 || delar[0] !== "pbkdf2") return false;
-  const iterationer = parseInt(delar[1], 10);
-  if (!Number.isFinite(iterationer) || iterationer < 1000) return false;
-  const salt = franB64(delar[2]);
-  const forvantad = franB64(delar[3]);
-  const faktisk = await pbkdf2(losenord, salt, iterationer);
-  if (faktisk.length !== forvantad.length) return false;
-  let diff = 0;
-  for (let i = 0; i < faktisk.length; i++) diff |= faktisk[i] ^ forvantad[i];
-  return diff === 0;
-}
-
-async function sha256Hex(text: string): Promise<string> {
+export async function sha256Hex(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function skapaSession(env: Env, anvandareId: string): Promise<string> {
-  const token = b64(crypto.getRandomValues(new Uint8Array(32))).replace(/[^A-Za-z0-9]/g, "");
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let token = "";
+  for (const b of bytes) token += b.toString(16).padStart(2, "0");
   const garUt = new Date(Date.now() + SESSION_DYGN * 864e5).toISOString();
   await env.DB.prepare("INSERT INTO sessioner (token_hash, anvandare_id, gar_ut) VALUES (?, ?, ?)")
     .bind(await sha256Hex(token), anvandareId, garUt)
@@ -86,27 +79,20 @@ export function sessionsKaka(token: string): string {
 }
 export const raderadKaka = "sess=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0";
 
-export interface Anvandare { id: string; epost: string; }
+export interface Anvandare { id: string; }
 
 export async function inloggad(request: Request, env: Env): Promise<Anvandare | null> {
   const token = kakaFran(request, "sess");
   if (!token) return null;
   const rad = await env.DB.prepare(
-    `SELECT a.id AS id, a.epost AS epost, s.gar_ut AS gar_ut
+    `SELECT a.id AS id, s.gar_ut AS gar_ut
        FROM sessioner s JOIN anvandare a ON a.id = s.anvandare_id
       WHERE s.token_hash = ?`,
-  ).bind(await sha256Hex(token)).first<{ id: string; epost: string; gar_ut: string }>();
+  ).bind(await sha256Hex(token)).first<{ id: string; gar_ut: string }>();
   if (!rad) return null;
   if (Date.parse(rad.gar_ut) < Date.now()) {
     await slutaSession(env, token);
     return null;
   }
-  return { id: rad.id, epost: rad.epost };
-}
-
-export function giltigEpost(e: unknown): e is string {
-  return typeof e === "string" && e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
-export function giltigtLosenord(l: unknown): l is string {
-  return typeof l === "string" && l.length >= 10 && l.length <= 200;
+  return { id: rad.id };
 }

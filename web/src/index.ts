@@ -1,8 +1,8 @@
 /** Dagsformen — Cloudflare Worker: konton, kvoter och coachen. */
 import {
   type Env, type Anvandare,
-  hashaLosenord, verifieraLosenord, skapaSession, slutaSession, inloggad,
-  kakaFran, sessionsKaka, raderadKaka, giltigEpost, giltigtLosenord,
+  skapaKod, normaliseraKod, sha256Hex, skapaSession, slutaSession, inloggad,
+  kakaFran, sessionsKaka, raderadKaka,
 } from "./auth";
 import { kollaKvot, reserveraSvar, angraReservation } from "./kvot";
 import { giltigBegaran, stromaCoach } from "./coach";
@@ -25,42 +25,41 @@ function sammaUrsprung(request: Request): boolean {
   try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
 }
 
+/** Skapar ett konto och returnerar koden. Den visas en enda gång. */
 async function registrera(request: Request, env: Env): Promise<Response> {
-  const b = await laesJson(request);
-  if (!b) return json({ fel: "Ogiltig begäran." }, 400);
-  const epost = typeof b.epost === "string" ? b.epost.trim().toLowerCase() : null;
-  if (!giltigEpost(epost)) return json({ fel: "Ange en giltig e-postadress." }, 400);
-  if (!giltigtLosenord(b.losenord)) return json({ fel: "Lösenordet måste vara minst 10 tecken." }, 400);
-
-  const finns = await env.DB.prepare("SELECT id FROM anvandare WHERE epost = ?").bind(epost).first();
-  if (finns) return json({ fel: "Det finns redan ett konto med den adressen." }, 409);
-
   const id = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO anvandare (id, epost, losenord, skapad) VALUES (?, ?, ?, ?)")
-    .bind(id, epost, await hashaLosenord(b.losenord), new Date().toISOString())
-    .run();
-  const token = await skapaSession(env, id);
-  return json({ epost }, 200, { "Set-Cookie": sessionsKaka(token) });
+  // I praktiken kolliderar två koder aldrig, men en krock ska ge en ny kod
+  // i stället för ett fel — UNIQUE-villkoret på kod_hash fångar den.
+  for (let forsok = 0; forsok < 5; forsok++) {
+    const kod = skapaKod();
+    try {
+      await env.DB.prepare("INSERT INTO anvandare (id, kod_hash, skapad) VALUES (?, ?, ?)")
+        .bind(id, await sha256Hex(normaliseraKod(kod) as string), new Date().toISOString())
+        .run();
+      const token = await skapaSession(env, id);
+      return json({ kod }, 200, { "Set-Cookie": sessionsKaka(token) });
+    } catch (fel) {
+      if (forsok === 4) return json({ fel: "Kunde inte skapa en kod just nu. Prova igen." }, 500);
+    }
+  }
+  return json({ fel: "Kunde inte skapa en kod just nu. Prova igen." }, 500);
 }
 
 async function loggaIn(request: Request, env: Env): Promise<Response> {
   const b = await laesJson(request);
-  if (!b) return json({ fel: "Ogiltig begäran." }, 400);
-  const epost = typeof b.epost === "string" ? b.epost.trim().toLowerCase() : "";
-  const losenord = typeof b.losenord === "string" ? b.losenord : "";
-  const rad = await env.DB.prepare("SELECT id, losenord FROM anvandare WHERE epost = ?")
-    .bind(epost).first<{ id: string; losenord: string }>();
-  // Samma svar oavsett om kontot saknas eller lösenordet är fel.
-  const ok = rad ? await verifieraLosenord(losenord, rad.losenord) : false;
-  if (!rad || !ok) return json({ fel: "Fel e-post eller lösenord." }, 401);
+  const kod = b ? normaliseraKod(b.kod) : null;
+  if (!kod) return json({ fel: "Koden ser inte rätt ut. Den består av 16 tecken." }, 400);
+  const rad = await env.DB.prepare("SELECT id FROM anvandare WHERE kod_hash = ?")
+    .bind(await sha256Hex(kod)).first<{ id: string }>();
+  if (!rad) return json({ fel: "Ingen hittades med den koden. Kontrollera att den är rätt avskriven." }, 401);
   const token = await skapaSession(env, rad.id);
-  return json({ epost }, 200, { "Set-Cookie": sessionsKaka(token) });
+  return json({ ok: true }, 200, { "Set-Cookie": sessionsKaka(token) });
 }
 
 async function migStatus(anv: Anvandare, env: Env): Promise<Response> {
   const kvot = await kollaKvot(env, anv.id);
   return json({
-    epost: anv.epost,
+    inloggad: true,
     svarKvar: kvot.kvarForAnvandaren,
     coachPausad: kvot.skal === "manadstak",
   });
@@ -108,10 +107,10 @@ export default {
 
     const anv = await inloggad(request, env);
     if (url.pathname === "/api/mig" && request.method === "GET") {
-      return anv ? migStatus(anv, env) : json({ epost: null });
+      return anv ? migStatus(anv, env) : json({ inloggad: false });
     }
     if (url.pathname === "/api/coach" && request.method === "POST") {
-      if (!anv) return json({ fel: "Logga in först." }, 401);
+      if (!anv) return json({ fel: "Logga in med din kod först." }, 401);
       return coach(request, env, anv, ctx);
     }
     return json({ fel: "Okänd endpoint." }, 404);

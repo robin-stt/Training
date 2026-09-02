@@ -1,11 +1,12 @@
 CREATE TABLE IF NOT EXISTS anvandare (
   id TEXT PRIMARY KEY,
-  epost TEXT NOT NULL UNIQUE,
-  losenord TEXT NOT NULL,
+  -- Bara SHA-256 av inloggningskoden lagras, så en läckt databas inte
+  -- innehåller några användbara koder.
+  kod_hash TEXT NOT NULL UNIQUE,
   skapad TEXT NOT NULL
 );
 
--- Bara hashen av sessionstoken lagras, så en läckt databas inte ger inloggning.
+-- Bara hashen av sessionstoken lagras, av samma skäl.
 CREATE TABLE IF NOT EXISTS sessioner (
   token_hash TEXT PRIMARY KEY,
   anvandare_id TEXT NOT NULL,

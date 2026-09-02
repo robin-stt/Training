@@ -1,7 +1,8 @@
 # Dagsformen — webbapp med konton
 
-Samma app som artifact-versionen, men som en egen webbplats: besökarna skapar
-konto och coachen drivs av **din** Anthropic-nyckel i stället för deras egen.
+Samma app som artifact-versionen, men som en egen webbplats: besökarna får en
+inloggningskod och coachen drivs av **din** Anthropic-nyckel i stället för deras
+egen.
 
 ```
 Webbläsare  ──►  Cloudflare Worker  ──►  Anthropic API (din nyckel)
@@ -13,10 +14,24 @@ Hälsodatan lämnar aldrig besökarens webbläsare. Servern ser bara den
 sammanfattning av nyckeltal som skickas med när någon frågar coachen, och den
 sparas inte.
 
+## Inloggning utan lösenord
+
+Första gången trycker besökaren på **Skapa min kod** och får en slumpad kod i
+stilen `ABCD-EFGH-JKMN-PQRS`. Den koden är hela inloggningen — ingen e-post,
+inget lösenord. Nästa gång skriver de in samma kod.
+
+Koden har 80 bitars entropi och går inte att gissa. Servern lagrar bara
+SHA-256 av den, vilket är ett enda snabbt hashsteg — därför ryms appen på
+Cloudflares **gratisnivå**.
+
+Priset är att koden inte kan återställas: tappar besökaren bort den kommer de
+inte in i sitt konto igen och får skapa ett nytt. Appen säger det tydligt när
+koden visas. Hälsodatan ligger ändå kvar i webbläsaren, så det som går
+förlorat är kontot och månadens kvot — inte datan.
+
 ## Vad som krävs
 
-- Ett Cloudflare-konto med **Workers Paid** (5 USD/mån). Gratisnivån ger bara
-  10 ms CPU per anrop, vilket inte räcker för säker lösenordshashning.
+- Ett Cloudflare-konto. **Gratisnivån räcker** (100 000 anrop/dygn).
 - En Anthropic API-nyckel från <https://console.anthropic.com>.
 - Node 18+ lokalt.
 
@@ -82,22 +97,29 @@ npm run db:init-local
 npm run dev
 ```
 
-Lokalt kör appen mot en egen SQLite-fil. Sätt `ANTHROPIC_API_KEY` i miljön om du
-vill testa coachen på riktigt — utan nyckel svarar allt utom coachen som vanligt.
+Lokalt kör appen mot en egen SQLite-fil. Vill du testa coachen på riktigt, lägg
+nyckeln i `web/.dev.vars` (den filen är git-ignorerad):
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Utan nyckel fungerar allt utom coachens svar.
 
 ## Säkerhet
 
-- Lösenord hashas med PBKDF2-SHA256 (210 000 varv, slumpat salt per konto).
-- Bara hashen av sessionstoken lagras, så en läckt databas ger inte inloggning.
+- Inloggningskoder skapas av servern med `crypto.getRandomValues` och lagras
+  bara som SHA-256, så en läckt databas innehåller inga användbara koder.
+- Bara hashen av sessionstoken lagras, av samma skäl.
 - Sessionskakan är `HttpOnly`, `Secure` och `SameSite=Lax`.
 - POST-anrop med främmande `Origin` avvisas.
-- Inloggning svarar likadant oavsett om kontot saknas eller lösenordet är fel.
+- Ingen personuppgift lagras: appen frågar aldrig efter namn eller e-post.
 
 ## Filer
 
 ```
 src/index.ts    Router, registrering, inloggning, kvotkontroll
-src/auth.ts     Lösenordshashning, sessioner, kakor
+src/auth.ts     Inloggningskoder, sessioner, kakor
 src/kvot.ts     Kostnadsberäkning och de två taken
 src/coach.ts    Prompt till Claude och strömning tillbaka till webbläsaren
 public/         Frontend (samma app som artifact-versionen)
