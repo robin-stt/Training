@@ -4,7 +4,7 @@ import {
   MIN_LANGD, foreslaKod, normaliseraKod, forSvagKod, sha256Hex,
   kollaForsok, raknaFelforsok, nollstallForsok,
   skapaSession, slutaSession, inloggad,
-  kakaFran, sessionsKaka, raderadKaka, hamtaNyckel,
+  kakaFran, sessionsKaka, raderadKaka, hamtaNyckel, logga,
 } from "./auth";
 import { kollaKvot, reserveraSvar, angraReservation } from "./kvot";
 import { giltigBegaran, stromaCoach } from "./coach";
@@ -30,7 +30,7 @@ function sammaUrsprung(request: Request): boolean {
 const KOD_KRAV = `Koden måste vara minst ${MIN_LANGD} tecken och får inte vara lätt att gissa.`;
 
 /** Skapar ett konto med den kod användaren själv valt. */
-async function registrera(request: Request, env: Env): Promise<Response> {
+async function registrera(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   if (!(await kollaForsok(env, request))) {
     return json({ fel: "För många försök. Vänta en kvart och prova igen." }, 429);
   }
@@ -54,11 +54,12 @@ async function registrera(request: Request, env: Env): Promise<Response> {
     .bind(id, kodHash, new Date().toISOString())
     .run();
   await nollstallForsok(env, request);
+  ctx.waitUntil(logga(env, "konto_skapat", null, id));
   const token = await skapaSession(env, id);
   return json({ ok: true }, 200, { "Set-Cookie": sessionsKaka(token) });
 }
 
-async function loggaIn(request: Request, env: Env): Promise<Response> {
+async function loggaIn(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   if (!(await kollaForsok(env, request))) {
     return json({ fel: "För många försök. Vänta en kvart och prova igen." }, 429);
   }
@@ -75,6 +76,7 @@ async function loggaIn(request: Request, env: Env): Promise<Response> {
     return json({ fel: "Ingen hittades med den koden." }, 401);
   }
   await nollstallForsok(env, request);
+  ctx.waitUntil(logga(env, "inloggning", null, rad.id));
   const token = await skapaSession(env, rad.id);
   return json({ ok: true }, 200, { "Set-Cookie": sessionsKaka(token) });
 }
@@ -133,8 +135,8 @@ export default {
     if (url.pathname === "/api/foresla-kod" && request.method === "GET") {
       return json({ kod: foreslaKod() });
     }
-    if (url.pathname === "/api/registrera" && request.method === "POST") return registrera(request, env);
-    if (url.pathname === "/api/logga-in" && request.method === "POST") return loggaIn(request, env);
+    if (url.pathname === "/api/registrera" && request.method === "POST") return registrera(request, env, ctx);
+    if (url.pathname === "/api/logga-in" && request.method === "POST") return loggaIn(request, env, ctx);
 
     if (url.pathname === "/api/logga-ut" && request.method === "POST") {
       const token = kakaFran(request, "sess");
@@ -146,6 +148,17 @@ export default {
     if (url.pathname === "/api/mig" && request.method === "GET") {
       return anv ? migStatus(anv, env) : json({ inloggad: false });
     }
+    // Tar emot händelser från webbläsaren. Kräver ingen inloggning, eftersom
+    // importfel oftast inträffar innan någon skapat konto.
+    if (url.pathname === "/api/handelse" && request.method === "POST") {
+      const b = await laesJson(request);
+      const typ = b && typeof b.typ === "string" ? b.typ : null;
+      if (!typ) return json({ fel: "Ogiltig begäran." }, 400);
+      const anv0 = await inloggad(request, env);
+      ctx.waitUntil(logga(env, typ, typeof b!.detalj === "string" ? b!.detalj : null, anv0 ? anv0.id : null));
+      return json({ ok: true });
+    }
+
     // Öppen hälsokontroll: säger bara om coachen är redo, inget mer. Går att
     // öppna i webbläsaren för att se direkt när nyckeln blivit aktiv.
     if (url.pathname === "/api/status" && request.method === "GET") {

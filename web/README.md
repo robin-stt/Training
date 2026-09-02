@@ -148,6 +148,7 @@ src/auth.ts     Inloggningskoder, sessioner, kakor
 src/kvot.ts     Kostnadsberäkning och de två taken
 src/coach.ts    Prompt till Claude och strömning tillbaka till webbläsaren
 deploy.sh       Publicerar allt i ett kommando
+LOGG.md         Så läser du händelseloggen
 public/         Frontend (samma app som artifact-versionen)
 schema.sql      Tabeller
 ```

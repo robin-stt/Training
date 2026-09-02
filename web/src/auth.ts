@@ -189,3 +189,37 @@ export async function hamtaNyckel(env: Env): Promise<string | null> {
   }
   return null;
 }
+
+/**
+ * Skriver en rad i händelseloggen. Får aldrig innehålla hälsodata eller
+ * inloggningskoder — bara typ, en kort beskrivning och tidpunkt. Loggningen
+ * ska heller aldrig kunna fälla anropet den beskriver, så alla fel sväljs.
+ */
+export async function logga(
+  env: Env,
+  typ: string,
+  detalj?: string | null,
+  anvandareId?: string | null,
+): Promise<void> {
+  const skriv = () =>
+    env.DB.prepare("INSERT INTO handelser (tid, typ, detalj, anvandare_id) VALUES (?, ?, ?, ?)")
+      .bind(new Date().toISOString(), typ.slice(0, 40), (detalj || "").slice(0, 300) || null, anvandareId || null)
+      .run();
+  try {
+    await skriv();
+  } catch (fel) {
+    if (!/no such table/i.test(String(fel))) { console.error("logg misslyckades:", fel); return; }
+    try {
+      await env.DB.prepare(
+        `CREATE TABLE IF NOT EXISTS handelser (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           tid TEXT NOT NULL,
+           typ TEXT NOT NULL,
+           detalj TEXT,
+           anvandare_id TEXT
+         )`,
+      ).run();
+      await skriv();
+    } catch (igen) { console.error("logg misslyckades:", igen); }
+  }
+}

@@ -269,7 +269,8 @@ footer.app { color: var(--muted); font-size: 12.5px; margin-top: 20px; text-alig
     <p class="sub" style="margin-top:10px">Använder du appen <strong>Health Auto Export</strong> funkar dess CSV-zip lika bra.</p>
   </div>
 
-  <input type="file" id="fileZip" accept=".zip" hidden>
+  <!-- Flera typer: enbart ".zip" gör att iOS gråar ut filen i filväljaren. -->
+  <input type="file" id="fileZip" accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream" hidden>
   <input type="file" id="fileJson" accept=".json" hidden>
 
   <!-- Huvudvy -->
@@ -436,10 +437,46 @@ function veckoNr(iso) {
 const idag = () => new Date().toISOString().slice(0, 10);
 function visaStatus(msg, fel, pct) {
   const el = $("status"); el.hidden = false; el.className = fel ? "error" : ""; el.textContent = msg;
-  if (pct != null) { const b = document.createElement("div"); b.className = "bar"; const i = document.createElement("i"); i.style.width = pct + "%"; b.appendChild(i); el.appendChild(b); }
-  if (fel) setTimeout(() => { el.hidden = true; }, 9000);
+  if (pct != null) {
+    const b = document.createElement("div"); b.className = "bar";
+    const i = document.createElement("i"); i.style.width = pct + "%";
+    b.appendChild(i); el.appendChild(b);
+  }
+  // Ett fel får ligga kvar tills det stängs. Automatisk döljning gjorde att
+  // den som fastnade i importen inte såg någon förklaring alls.
+  if (fel) {
+    const stang = document.createElement("button");
+    stang.className = "liten"; stang.textContent = "Stäng";
+    stang.style.marginTop = "8px";
+    stang.addEventListener("click", doljStatus);
+    el.appendChild(document.createElement("br"));
+    el.appendChild(stang);
+  }
 }
 const doljStatus = () => { $("status").hidden = true; };
+
+/**
+ * Rapporterar en händelse till servern så att fel går att se i efterhand.
+ * Skickar bara typ och en kort beskrivning — aldrig hälsodata, aldrig koden.
+ */
+function loggaHandelse(typ, detalj) {
+  try {
+    fetch("/api/handelse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ typ, detalj: String(detalj || "").slice(0, 300) }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) { /* loggning får aldrig störa appen */ }
+}
+
+// Oväntade fel i webbläsaren hamnar också i loggen.
+window.addEventListener("error", e => {
+  loggaHandelse("js_fel", `${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`);
+});
+window.addEventListener("unhandledrejection", e => {
+  loggaHandelse("js_fel", "obehandlat löfte: " + String(e.reason).slice(0, 200));
+});
 
 /* ======================================================= sammanfoga === */
 function slaIhopDaglig(rader) {
@@ -651,13 +688,29 @@ function xmlAggregator() {
   return { post, passStart, passStat, passSlut, klart };
 }
 
-async function importeraAppleZip(fil) {
-  const agg = xmlAggregator(), dec = new TextDecoder();
+/**
+ * Läser hela zip-filen i ett svep och plockar ut det som finns, oavsett
+ * format. Tidigare avgjordes formatet genom att titta på filens första
+ * fyra megabyte — men i en riktig Apple-export ligger export.xml ofta
+ * långt efter den gränsen, bakom den stora export_cda.xml, och då
+ * misstogs exporten för ett annat format och importen sa att den var tom.
+ */
+async function importeraZip(fil) {
+  const agg = xmlAggregator();
+  const dec = new TextDecoder();
   let svans = "";
-  function skanna(text, sista) {
+  let sagXml = false;
+  let daglig = [], pass = [];
+  const hr = [];
+  let felIStrom = null;
+
+  function skannaXml(text, sista) {
     let t = svans + text;
-    if (!sista) { const c = t.lastIndexOf(">"); if (c < 0) { svans = t; return; } svans = t.slice(c + 1); t = t.slice(0, c + 1); }
-    else svans = "";
+    if (!sista) {
+      const c = t.lastIndexOf(">");
+      if (c < 0) { svans = t; return; }
+      svans = t.slice(c + 1); t = t.slice(0, c + 1);
+    } else svans = "";
     const re = /<(Record|Workout|WorkoutStatistics|\/Workout)\b[^>]*>/g;
     let m;
     while ((m = re.exec(t))) {
@@ -667,90 +720,93 @@ async function importeraAppleZip(fil) {
       else agg.passSlut();
     }
   }
-  await new Promise((ok, fel) => {
-    let hittad = false, klar = false;
-    const uz = new fflate.Unzip(); uz.register(fflate.UnzipInflate);
-    uz.onfile = f => {
-      if (!f.name.endsWith("export.xml") || f.name.includes("export_cda")) return;
-      hittad = true;
+
+  const uz = new fflate.Unzip();
+  uz.register(fflate.UnzipInflate);
+  uz.onfile = f => {
+    const namn = f.name;
+    if (namn.endsWith("export.xml") && !namn.includes("export_cda")) {
+      sagXml = true;
       f.ondata = (e, data, sista) => {
-        if (e) return fel(e);
-        skanna(dec.decode(data, { stream: !sista }), sista);
-        if (sista) { klar = true; ok(); }
+        if (e) { felIStrom = e; return; }
+        skannaXml(dec.decode(data, { stream: !sista }), sista);
       };
       f.start();
+      return;
+    }
+    const arHae = /(^|\/)HealthAutoExport-[^/]*\.csv$/i.test(namn)
+      || /(^|\/)Workouts-[^/]*\.csv$/i.test(namn)
+      || /-(?:Puls|Heart Rate)-\d{8}_\d{6}\.csv$/i.test(namn);
+    if (!arHae) return;   // GPX, rutter och export_cda hoppas över helt
+    const bitar = [];
+    f.ondata = (e, data, sista) => {
+      if (e) { felIStrom = e; return; }
+      bitar.push(data);
+      if (!sista) return;
+      let langd = 0;
+      for (const b of bitar) langd += b.length;
+      const hela = new Uint8Array(langd);
+      let i = 0;
+      for (const b of bitar) { hela.set(b, i); i += b.length; }
+      const text = new TextDecoder().decode(hela);
+      if (/HealthAutoExport-/i.test(namn)) daglig = daglig.concat(haeDaglig(text));
+      else if (/Workouts-/i.test(namn)) pass = pass.concat(haePass(text));
+      else { const sess = haePuls(namn, text); if (sess) hr.push(sess); }
     };
-    const CH = 4 << 20; let off = 0;
-    (async () => {
-      try {
-        while (off < fil.size && !klar) {
-          const buf = new Uint8Array(await fil.slice(off, Math.min(off + CH, fil.size)).arrayBuffer());
-          off += buf.length;
-          uz.push(buf, off >= fil.size);
-          visaStatus(`Läser din hälsodata … ${Math.round(off / fil.size * 100)} %`, false, off / fil.size * 100);
-          await new Promise(r => setTimeout(r));
-        }
-        if (!hittad) fel(new Error("Ingen export.xml hittades i zip-filen."));
-        else if (!klar) ok();
-      } catch (e) { fel(e); }
-    })();
-  });
-  const r = agg.klart();
-  return { daglig: r.daglig, pass: r.pass, hr: [] };
-}
+    f.start();
+  };
 
-async function importeraHaeZip(fil) {
-  const buf = new Uint8Array(await fil.arrayBuffer());
-  const filer = await new Promise((ok, fel) => {
-    fflate.unzip(buf, { filter: f => /(^|\/)(HealthAutoExport-|Workouts-)[^/]*\.csv$/.test(f.name) || /-(?:Puls|Heart Rate)-\d{8}_\d{6}\.csv$/i.test(f.name) },
-      (e, ut) => e ? fel(e) : ok(ut));
-  });
-  const dec = new TextDecoder();
-  let daglig = [], pass = [];
-  const hr = [];
-  for (const [namn, data] of Object.entries(filer)) {
-    const text = dec.decode(data);
-    if (/(^|\/)HealthAutoExport-/.test(namn)) daglig = daglig.concat(haeDaglig(text));
-    else if (/(^|\/)Workouts-/.test(namn)) pass = pass.concat(haePass(text));
-    else { const s = haePuls(namn, text); if (s) hr.push(s); }
+  const CH = 4 << 20;
+  let off = 0;
+  while (off < fil.size) {
+    const buf = new Uint8Array(await fil.slice(off, Math.min(off + CH, fil.size)).arrayBuffer());
+    off += buf.length;
+    uz.push(buf, off >= fil.size);
+    if (felIStrom) throw felIStrom;
+    const pct = Math.round(off / fil.size * 100);
+    visaStatus(`Läser din hälsodata … ${pct} %`, false, pct);
+    await new Promise(r => setTimeout(r));
   }
-  if (!daglig.length && !pass.length) throw new Error("Zip-filen innehöll inga hälsodatafiler. Välj CSV-format i Health Auto Export-appen.");
-  return { daglig, pass, hr };
-}
 
-async function zipNamn(fil) {
-  return new Promise((ok, fel) => {
-    const namn = [];
-    const uz = new fflate.Unzip();
-    uz.onfile = f => namn.push(f.name);
-    fil.slice(0, Math.min(fil.size, 4 << 20)).arrayBuffer().then(b => {
-      try { uz.push(new Uint8Array(b), fil.size <= (4 << 20)); } catch (e) { /* central dir sist — ok */ }
-      ok(namn);
-    }, fel);
-  });
+  if (sagXml) {
+    const r = agg.klart();
+    daglig = daglig.concat(r.daglig);
+    pass = pass.concat(r.pass);
+  }
+  return { daglig, pass, hr };
 }
 
 async function taEmotFil(fil) {
   if (!fil) return;
   if (/\.json$/i.test(fil.name)) return aterstall(fil);
-  if (!/\.zip$/i.test(fil.name)) return visaStatus("Välj en .zip-fil från Hälsa-appen eller Health Auto Export.", true);
+  if (!/\.zip$/i.test(fil.name)) {
+    return visaStatus("Välj en .zip-fil från Hälsa-appen eller Health Auto Export.", true);
+  }
   visaStatus("Öppnar filen …", false, 2);
+  loggaHandelse("import_start", `${Math.round(fil.size / 1e6)} MB`);
   try {
     const huvud = new Uint8Array(await fil.slice(0, 4).arrayBuffer());
-    if (huvud[0] !== 0x50 || huvud[1] !== 0x4b) throw new Error("Filen ser inte ut som en zip.");
-    const namn = await zipNamn(fil);
-    const appleFormat = namn.some(n => n.endsWith("export.xml") && !n.includes("export_cda"));
-    if (!appleFormat) visaStatus("Läser din hälsodata …", false, 30);
-    const r = appleFormat ? await importeraAppleZip(fil) : await importeraHaeZip(fil);
+    if (huvud[0] !== 0x50 || huvud[1] !== 0x4b) {
+      throw new Error("Filen ser inte ut som en zip. Ladda ner exporten på nytt och packa inte upp den.");
+    }
+    const r = await importeraZip(fil);
+    if (!r.daglig.length && !r.pass.length) {
+      throw new Error("Hittade ingen hälsodata i filen. Kontrollera att det är exporten från Hälsa-appen (Profil → Exportera alla hälsodata) eller en CSV-export från Health Auto Export.");
+    }
     slaIhopDaglig(r.daglig);
     const nya = slaIhopPass(r.pass);
     slaIhopHr(r.hr);
     P.imports.push({ datum: idag(), fil: fil.name, dagar: r.daglig.length });
     spara(); doljStatus();
     visaStatus(`Klart! ${r.daglig.length} dagar inlästa och ${nya} nya träningspass.`);
+    loggaHandelse("import_klar", `${r.daglig.length} dagar, ${nya} pass`);
     setTimeout(doljStatus, 6000);
     rita();
-  } catch (e) { visaStatus("Importen misslyckades: " + (e && e.message ? e.message : e), true); }
+  } catch (e) {
+    const text = e && e.message ? e.message : String(e);
+    visaStatus("Importen misslyckades: " + text, true);
+    loggaHandelse("import_fel", text);
+  }
 }
 
 /* ==================================================== säkerhetskopia === */

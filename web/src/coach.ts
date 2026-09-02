@@ -2,6 +2,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Env } from "./auth";
 import { bokforKostnad, angraReservation } from "./kvot";
+import { logga } from "./auth";
 
 const MODELL = "claude-opus-5";
 
@@ -101,10 +102,12 @@ export async function stromaCoach(
           controller.enqueue(encoder.encode("\n\n(Jag kan tyvärr inte svara på det här. Formulera om frågan så försöker jag igen.)"));
         }
         ctx.waitUntil(bokforKostnad(env, anvandareId, slutgiltigt.usage));
+        ctx.waitUntil(logga(env, "coach_svar", `${slutgiltigt.usage.output_tokens} tokens ut`, anvandareId));
       } catch (fel) {
         // Ett svar som aldrig blev av ska inte kosta adepten ett av månadens.
         if (!nagotSkrivet) ctx.waitUntil(angraReservation(env, anvandareId));
         console.error("coach-anrop misslyckades:", fel);
+        ctx.waitUntil(logga(env, "coach_fel", felText(fel), anvandareId));
         const text = "(" + felText(fel) + ")";
         controller.enqueue(encoder.encode(nagotSkrivet ? "\n\n" + text : text));
       } finally {

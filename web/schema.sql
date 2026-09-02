@@ -36,3 +36,14 @@ CREATE TABLE IF NOT EXISTS forsok (
   antal INTEGER NOT NULL DEFAULT 0,
   nollstalls TEXT NOT NULL
 );
+
+-- Händelselogg: vem som kommit in och vilka fel som uppstått. Innehåller
+-- aldrig hälsodata eller inloggningskoder — bara typ, en kort text och tid.
+CREATE TABLE IF NOT EXISTS handelser (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tid TEXT NOT NULL,
+  typ TEXT NOT NULL,
+  detalj TEXT,
+  anvandare_id TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_handelser_tid ON handelser (tid);
