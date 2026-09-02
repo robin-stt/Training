@@ -19,7 +19,10 @@ const KOD_TECKEN = 16;
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
-  ANTHROPIC_API_KEY: string;
+  /** Hemlighet satt direkt på Workern. Kan saknas — se hamtaNyckel. */
+  ANTHROPIC_API_KEY?: string;
+  /** Hemlighet ur kontots Secrets Store; värdet hämtas asynkront. */
+  ANTHROPIC_NYCKEL?: { get(): Promise<string> };
   MANADSTAK_USD: string;
   SVAR_PER_ANVANDARE: string;
 }
@@ -95,4 +98,25 @@ export async function inloggad(request: Request, env: Env): Promise<Anvandare | 
     return null;
   }
   return { id: rad.id };
+}
+
+/**
+ * Nyckeln kan komma två vägar: som hemlighet på själva Workern, eller ur
+ * kontots Secrets Store. Secrets Store är den som följer med konfigurationen
+ * och därför överlever varje bygge; den direkta hemligheten är kvar som
+ * alternativ. Första träffen vinner.
+ */
+export async function hamtaNyckel(env: Env): Promise<string | null> {
+  if (typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0) {
+    return env.ANTHROPIC_API_KEY;
+  }
+  if (env.ANTHROPIC_NYCKEL && typeof env.ANTHROPIC_NYCKEL.get === "function") {
+    try {
+      const varde = await env.ANTHROPIC_NYCKEL.get();
+      if (typeof varde === "string" && varde.length > 0) return varde;
+    } catch (fel) {
+      console.error("kunde inte läsa nyckeln ur Secrets Store:", fel);
+    }
+  }
+  return null;
 }

@@ -2,7 +2,7 @@
 import {
   type Env, type Anvandare,
   skapaKod, normaliseraKod, sha256Hex, skapaSession, slutaSession, inloggad,
-  kakaFran, sessionsKaka, raderadKaka,
+  kakaFran, sessionsKaka, raderadKaka, hamtaNyckel,
 } from "./auth";
 import { kollaKvot, reserveraSvar, angraReservation } from "./kvot";
 import { giltigBegaran, stromaCoach } from "./coach";
@@ -81,15 +81,16 @@ async function coach(request: Request, env: Env, anv: Anvandare, ctx: ExecutionC
   // Allt som kan avgöras utan att fråga Claude måste avgöras före
   // reservationen, annars kostar ett rent konfigurationsfel adepten
   // ett av månadens svar.
-  if (!env.ANTHROPIC_API_KEY) {
+  const nyckel = await hamtaNyckel(env);
+  if (!nyckel) {
     return json({
-      fel: "Coachen är inte konfigurerad ännu: API-nyckeln saknas. Lägg till ANTHROPIC_API_KEY som Secret i Cloudflare.",
+      fel: "Coachen är inte konfigurerad ännu: API-nyckeln saknas i Cloudflare.",
     }, 503);
   }
 
   await reserveraSvar(env, anv.id);
   try {
-    return await stromaCoach(env, anv.id, b, ctx);
+    return await stromaCoach(env, anv.id, b, ctx, nyckel);
   } catch (fel) {
     ctx.waitUntil(angraReservation(env, anv.id));
     return json({ fel: "Coachen kunde inte nås just nu. Prova igen." }, 502);
@@ -121,7 +122,7 @@ export default {
     // Öppen hälsokontroll: säger bara om coachen är redo, inget mer. Går att
     // öppna i webbläsaren för att se direkt när nyckeln blivit aktiv.
     if (url.pathname === "/api/status" && request.method === "GET") {
-      const redo = typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0;
+      const redo = (await hamtaNyckel(env)) !== null;
       return json({
         coachRedo: redo,
         meddelande: redo
@@ -137,9 +138,9 @@ export default {
       const namn = Object.keys(env as unknown as Record<string, unknown>).sort();
       return json({
         variabelnamn: namn,
-        harAnthropicNyckel: typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0,
-        nyckelLangd: typeof env.ANTHROPIC_API_KEY === "string" ? env.ANTHROPIC_API_KEY.length : null,
-        nyckelPrefix: typeof env.ANTHROPIC_API_KEY === "string" ? env.ANTHROPIC_API_KEY.slice(0, 7) : null,
+        harAnthropicNyckel: (await hamtaNyckel(env)) !== null,
+        harDirektHemlighet: typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0,
+        harSecretsStore: !!env.ANTHROPIC_NYCKEL,
         manadstak: env.MANADSTAK_USD,
         svarPerAnvandare: env.SVAR_PER_ANVANDARE,
       });

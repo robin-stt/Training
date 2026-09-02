@@ -57,8 +57,9 @@ export async function stromaCoach(
   anvandareId: string,
   begaran: CoachBegaran,
   ctx: ExecutionContext,
+  nyckel: string,
 ): Promise<Response> {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: nyckel });
 
   const dataJson = JSON.stringify(begaran.data).slice(0, 40000);
   const meddelanden: Anthropic.MessageParam[] = [
