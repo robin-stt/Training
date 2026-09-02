@@ -58,8 +58,13 @@ PY
 echo "==> Lägger upp tabellerna"
 npx wrangler d1 execute dagsformen --remote --file=./schema.sql --yes >/dev/null
 
+# Ordningen spelar roll: en hemlighet kan bara sättas på en Worker som redan
+# finns, annars stannar wrangler på en fråga om att skapa den.
+echo "==> Publicerar"
+npx wrangler deploy
+
 echo "==> Lägger in API-nyckeln som hemlighet"
 printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY >/dev/null
 
-echo "==> Publicerar"
-npx wrangler deploy
+echo
+echo "Klart. Hemligheter gäller direkt — ingen ny deploy behövs."

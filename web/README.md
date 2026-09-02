@@ -61,12 +61,15 @@ använder `CREATE TABLE IF NOT EXISTS`.
 ```bash
 cd web
 npm install
-npx wrangler login
+npx wrangler login                    # öppnar webbläsaren
 npx wrangler d1 create dagsformen     # klistra in id:t i wrangler.toml
-npm run db:init
+npm run db:init                       # lägger upp tabellerna
+npm run deploy                        # skriver ut adressen
 npx wrangler secret put ANTHROPIC_API_KEY
-npm run deploy
 ```
+
+Hemligheten sätts **efter** första deployen — en hemlighet kan bara läggas på en
+Worker som redan finns. Den gäller direkt, ingen ny deploy behövs.
 
 Wrangler skriver ut adressen, i stilen `https://dagsformen.<ditt-konto>.workers.dev`.
 
