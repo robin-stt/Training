@@ -1,5 +1,7 @@
 # Dagsformen — webbapp med konton
 
+Publicerad på <https://dagsformen.robin-1cb.workers.dev>
+
 Samma app som artifact-versionen, men som en egen webbplats: besökarna får en
 inloggningskod och coachen drivs av **din** Anthropic-nyckel i stället för deras
 egen.
