@@ -12,8 +12,8 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "dagsformen"
-# Fylls i av "wrangler d1 create dagsformen" — se README.
-database_id = "FYLL_I_HAR"
+# Skapad i Cloudflares kontrollpanel.
+database_id = "55536946-9e71-4063-9a78-bc98187be32a"
 
 [vars]
 # Ungefär 200 kr. När månadens uppskattade kostnad passerar taket pausas
