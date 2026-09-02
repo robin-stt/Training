@@ -55,6 +55,17 @@ cd web
 | `CLOUDFLARE_ACCOUNT_ID` | Står till höger på Cloudflares Workers-översikt |
 | `ANTHROPIC_API_KEY` | <https://console.anthropic.com> |
 
+### Var API-nyckeln ligger
+
+Nyckeln hämtas ur kontots **Secrets Store**, inte som hemlighet direkt på
+Workern. Kopplingen står i `wrangler.toml` under `[[secrets_store_secrets]]`
+och följer därmed med varje bygge — en hemlighet satt i kontrollpanelen är
+lättare att tappa bort. Koden (`hamtaNyckel` i `src/auth.ts`) tar en direkt
+hemlighet först om en sådan finns, annars Secrets Store.
+
+Kontrollera när som helst att nyckeln når koden:
+<https://dagsformen.robin-1cb.workers.dev/api/status>
+
 Skriptet går att köra om: databasen skapas bara om den saknas, och tabellerna
 använder `CREATE TABLE IF NOT EXISTS`.
 
