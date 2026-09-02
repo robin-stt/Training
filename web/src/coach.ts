@@ -58,12 +58,6 @@ export async function stromaCoach(
   begaran: CoachBegaran,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  if (!env.ANTHROPIC_API_KEY) {
-    return new Response(
-      "Coachen är inte konfigurerad ännu: API-nyckeln saknas. Lägg till ANTHROPIC_API_KEY som Secret under Settings → Variables and Secrets i Cloudflare.",
-      { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } },
-    );
-  }
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   const dataJson = JSON.stringify(begaran.data).slice(0, 40000);

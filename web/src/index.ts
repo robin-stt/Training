@@ -78,6 +78,15 @@ async function coach(request: Request, env: Env, anv: Anvandare, ctx: ExecutionC
   const b = await laesJson(request);
   if (!giltigBegaran(b)) return json({ fel: "Ogiltig begäran." }, 400);
 
+  // Allt som kan avgöras utan att fråga Claude måste avgöras före
+  // reservationen, annars kostar ett rent konfigurationsfel adepten
+  // ett av månadens svar.
+  if (!env.ANTHROPIC_API_KEY) {
+    return json({
+      fel: "Coachen är inte konfigurerad ännu: API-nyckeln saknas. Lägg till ANTHROPIC_API_KEY som Secret i Cloudflare.",
+    }, 503);
+  }
+
   await reserveraSvar(env, anv.id);
   try {
     return await stromaCoach(env, anv.id, b, ctx);
