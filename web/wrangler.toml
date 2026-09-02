@@ -3,6 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Behåll variabler som satts i Cloudflares kontrollpanel. Utan den här raden
+# skriver varje deploy över dem med det som står i [vars] nedan.
+keep_vars = true
+
 # Frontend ligger i public/ och serveras direkt av Cloudflare.
 # Allt under /api/ går till workern.
 [assets]
