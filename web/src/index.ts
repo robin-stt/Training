@@ -118,6 +118,18 @@ export default {
     if (url.pathname === "/api/mig" && request.method === "GET") {
       return anv ? migStatus(anv, env) : json({ inloggad: false });
     }
+    // Öppen hälsokontroll: säger bara om coachen är redo, inget mer. Går att
+    // öppna i webbläsaren för att se direkt när nyckeln blivit aktiv.
+    if (url.pathname === "/api/status" && request.method === "GET") {
+      const redo = typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0;
+      return json({
+        coachRedo: redo,
+        meddelande: redo
+          ? "Coachen är redo — API-nyckeln är aktiv."
+          : "API-nyckeln når inte koden ännu. Lägg till ANTHROPIC_API_KEY som Secret på Workern dagsformen och klicka Deploy.",
+      });
+    }
+
     // Diagnostik: visar VILKA miljövariabler Workern ser, aldrig deras värden.
     // Gör skillnad på "hemligheten saknas" och "hemligheten heter något annat".
     if (url.pathname === "/api/diagnostik" && request.method === "GET") {
