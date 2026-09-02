@@ -1,7 +1,9 @@
 /** Dagsformen — Cloudflare Worker: konton, kvoter och coachen. */
 import {
   type Env, type Anvandare,
-  skapaKod, normaliseraKod, sha256Hex, skapaSession, slutaSession, inloggad,
+  MIN_LANGD, foreslaKod, normaliseraKod, forSvagKod, sha256Hex,
+  kollaForsok, raknaFelforsok, nollstallForsok,
+  skapaSession, slutaSession, inloggad,
   kakaFran, sessionsKaka, raderadKaka, hamtaNyckel,
 } from "./auth";
 import { kollaKvot, reserveraSvar, angraReservation } from "./kvot";
@@ -25,33 +27,54 @@ function sammaUrsprung(request: Request): boolean {
   try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
 }
 
-/** Skapar ett konto och returnerar koden. Den visas en enda gång. */
+const KOD_KRAV = `Koden måste vara minst ${MIN_LANGD} tecken och får inte vara lätt att gissa.`;
+
+/** Skapar ett konto med den kod användaren själv valt. */
 async function registrera(request: Request, env: Env): Promise<Response> {
-  const id = crypto.randomUUID();
-  // I praktiken kolliderar två koder aldrig, men en krock ska ge en ny kod
-  // i stället för ett fel — UNIQUE-villkoret på kod_hash fångar den.
-  for (let forsok = 0; forsok < 5; forsok++) {
-    const kod = skapaKod();
-    try {
-      await env.DB.prepare("INSERT INTO anvandare (id, kod_hash, skapad) VALUES (?, ?, ?)")
-        .bind(id, await sha256Hex(normaliseraKod(kod) as string), new Date().toISOString())
-        .run();
-      const token = await skapaSession(env, id);
-      return json({ kod }, 200, { "Set-Cookie": sessionsKaka(token) });
-    } catch (fel) {
-      if (forsok === 4) return json({ fel: "Kunde inte skapa en kod just nu. Prova igen." }, 500);
-    }
+  if (!(await kollaForsok(env, request))) {
+    return json({ fel: "För många försök. Vänta en kvart och prova igen." }, 429);
   }
-  return json({ fel: "Kunde inte skapa en kod just nu. Prova igen." }, 500);
+  const b = await laesJson(request);
+  const kod = b ? normaliseraKod(b.kod) : null;
+  if (!kod || forSvagKod(kod)) {
+    await raknaFelforsok(env, request);
+    return json({ fel: KOD_KRAV }, 400);
+  }
+  const kodHash = await sha256Hex(kod);
+  const upptagen = await env.DB.prepare("SELECT id FROM anvandare WHERE kod_hash = ?")
+    .bind(kodHash).first();
+  if (upptagen) {
+    // Räknas som felförsök: annars blir registreringen ett sätt att leta
+    // efter koder som redan finns.
+    await raknaFelforsok(env, request);
+    return json({ fel: "Den koden är upptagen. Välj en annan." }, 409);
+  }
+  const id = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO anvandare (id, kod_hash, skapad) VALUES (?, ?, ?)")
+    .bind(id, kodHash, new Date().toISOString())
+    .run();
+  await nollstallForsok(env, request);
+  const token = await skapaSession(env, id);
+  return json({ ok: true }, 200, { "Set-Cookie": sessionsKaka(token) });
 }
 
 async function loggaIn(request: Request, env: Env): Promise<Response> {
+  if (!(await kollaForsok(env, request))) {
+    return json({ fel: "För många försök. Vänta en kvart och prova igen." }, 429);
+  }
   const b = await laesJson(request);
   const kod = b ? normaliseraKod(b.kod) : null;
-  if (!kod) return json({ fel: "Koden ser inte rätt ut. Den består av 16 tecken." }, 400);
+  if (!kod) {
+    await raknaFelforsok(env, request);
+    return json({ fel: KOD_KRAV }, 400);
+  }
   const rad = await env.DB.prepare("SELECT id FROM anvandare WHERE kod_hash = ?")
     .bind(await sha256Hex(kod)).first<{ id: string }>();
-  if (!rad) return json({ fel: "Ingen hittades med den koden. Kontrollera att den är rätt avskriven." }, 401);
+  if (!rad) {
+    await raknaFelforsok(env, request);
+    return json({ fel: "Ingen hittades med den koden." }, 401);
+  }
+  await nollstallForsok(env, request);
   const token = await skapaSession(env, rad.id);
   return json({ ok: true }, 200, { "Set-Cookie": sessionsKaka(token) });
 }
@@ -106,6 +129,10 @@ export default {
       return json({ fel: "Ogiltigt ursprung." }, 403);
     }
 
+    // Förslag till den som inte vill hitta på en kod själv.
+    if (url.pathname === "/api/foresla-kod" && request.method === "GET") {
+      return json({ kod: foreslaKod() });
+    }
     if (url.pathname === "/api/registrera" && request.method === "POST") return registrera(request, env);
     if (url.pathname === "/api/logga-in" && request.method === "POST") return loggaIn(request, env);
 

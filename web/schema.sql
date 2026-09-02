@@ -28,3 +28,11 @@ CREATE TABLE IF NOT EXISTS total_anvandning (
   svar INTEGER NOT NULL DEFAULT 0,
   kostnad_usd REAL NOT NULL DEFAULT 0
 );
+
+-- Spärr mot att gissa sig till någons kod. En självvald kod går att gissa,
+-- så det är den här räknaren som håller, inte hashningen.
+CREATE TABLE IF NOT EXISTS forsok (
+  nyckel TEXT PRIMARY KEY,
+  antal INTEGER NOT NULL DEFAULT 0,
+  nollstalls TEXT NOT NULL
+);

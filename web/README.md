@@ -18,18 +18,27 @@ sparas inte.
 
 ## Inloggning utan lösenord
 
-Första gången trycker besökaren på **Skapa min kod** och får en slumpad kod i
-stilen `ABCD-EFGH-JKMN-PQRS`. Den koden är hela inloggningen — ingen e-post,
-inget lösenord. Nästa gång skriver de in samma kod.
+Besökaren väljer själv en kod, minst 12 tecken, och loggar in med den i
+fortsättningen. Ingen e-post, inget separat lösenord — koden är hela
+inloggningen. Den som hellre vill ha en slumpad kod trycker **Föreslå en stark
+kod**.
 
-Koden har 80 bitars entropi och går inte att gissa. Servern lagrar bara
-SHA-256 av den, vilket är ett enda snabbt hashsteg — därför ryms appen på
-Cloudflares **gratisnivå**.
+Att koden är både identitet och hemlighet gör den bekväm men känslig: en gissad
+kod ger direkt åtkomst. Tre skydd hanterar det:
 
-Priset är att koden inte kan återställas: tappar besökaren bort den kommer de
-inte in i sitt konto igen och får skapa ett nytt. Appen säger det tydligt när
-koden visas. Hälsodatan ligger ändå kvar i webbläsaren, så det som går
-förlorat är kontot och månadens kvot — inte datan.
+- **Minst 12 tecken**, och uppenbart svaga koder avvisas.
+- **Spärr efter 10 felförsök** från samma avsändare under 15 minuter. Eftersom
+  en självvald kod går att gissa är det den här spärren som faktiskt håller.
+- **Upptagen kod räknas som felförsök**, annars blir registreringen ett sätt att
+  leta efter koder som redan finns.
+
+Koden lagras bara som SHA-256 — osaltat, eftersom inloggningen måste slå upp
+kontot på enbart koden. Ett enda hashsteg tar mikrosekunder, vilket är därför
+appen ryms på Cloudflares **gratisnivå**.
+
+Koden kan inte återställas: tappar besökaren bort den får de skapa ett nytt
+konto. Hälsodatan ligger kvar i webbläsaren, så det som går förlorat är kontot
+och månadens kvot — inte datan.
 
 ## Vad som krävs
 

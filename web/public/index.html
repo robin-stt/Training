@@ -220,32 +220,27 @@ footer.app { color: var(--muted); font-size: 12.5px; margin-top: 20px; text-alig
   <div class="card" id="kontoKort" hidden>
     <div id="kontoStart">
       <h2>Lås upp coachen</h2>
-      <p class="sub">Coachen behöver ett konto. Du får en inloggningskod — ingen e-post, inget lösenord. Din hälsodata stannar i din webbläsare och skickas aldrig till servern.</p>
-      <div class="rad">
-        <button class="primary" id="kSkapa">Skapa min kod</button>
-        <button class="liten" id="kHarKod">Jag har redan en kod</button>
-      </div>
-    </div>
-
-    <div id="kontoLoggaIn" hidden>
-      <h2>Logga in</h2>
-      <p class="sub">Skriv in koden du fick när du skapade kontot.</p>
+      <p class="sub">Välj en kod som du loggar in med. Ingen e-post, inget lösenord — koden är hela inloggningen. Din hälsodata stannar i din webbläsare och skickas aldrig till servern.</p>
       <form id="kodForm">
         <div class="falt">
           <label for="kKod">Din kod</label>
-          <input type="text" id="kKod" autocomplete="one-time-code"
-                 placeholder="ABCD-EFGH-JKMN-PQRS" spellcheck="false" required>
+          <input type="text" id="kKod" autocomplete="off" spellcheck="false"
+                 placeholder="minst 12 tecken" required>
+          <span class="hint" id="kHint">Minst 12 tecken. Eftersom koden är både användarnamn och lösenord: välj något ingen kan gissa, och spara den — den kan inte återställas.</span>
         </div>
         <div class="rad">
-          <button class="primary" type="submit" id="kLoggaIn">Logga in</button>
-          <button type="button" class="liten" id="kTillbaka">Tillbaka</button>
+          <button class="primary" type="submit" id="kSkicka">Skapa konto</button>
+          <button type="button" class="liten" id="kForesla">Föreslå en stark kod</button>
+        </div>
+        <div class="rad" style="margin-top:8px">
+          <button type="button" class="liten" id="kVaxla">Jag har redan en kod</button>
         </div>
       </form>
     </div>
 
     <div id="kontoNyKod" hidden>
-      <h2>Här är din kod</h2>
-      <p class="sub">Spara den nu. Den visas bara den här gången, och utan den kommer du inte in i ditt konto igen — det finns ingen återställning.</p>
+      <h2>Spara din kod</h2>
+      <p class="sub">Det här är din inloggning. Utan den kommer du inte in i kontot igen — det finns ingen återställning.</p>
       <div class="kodruta"><code id="kNyKod"></code></div>
       <div class="rad">
         <button id="kKopiera">Kopiera koden</button>
@@ -1367,6 +1362,8 @@ let ctl = null;
 let konto = null;   // {epost, svarKvar, coachPausad} när någon är inloggad
 
 /* ----------------------------------------------------------- konto --- */
+let registrerar = true;   // false = användaren loggar in med befintlig kod
+
 async function hamtaKonto() {
   try {
     const r = await fetch("/api/mig", { headers: { Accept: "application/json" } });
@@ -1389,15 +1386,24 @@ function visaKontoFel(text) {
 }
 function visaKontoVy(vy) {
   $("kontoStart").hidden = vy !== "start";
-  $("kontoLoggaIn").hidden = vy !== "loggain";
   $("kontoNyKod").hidden = vy !== "nykod";
+  visaKontoFel("");
+}
+function sattLage(reg) {
+  registrerar = reg;
+  $("kSkicka").textContent = reg ? "Skapa konto" : "Logga in";
+  $("kVaxla").textContent = reg ? "Jag har redan en kod" : "Skapa nytt konto";
+  $("kForesla").hidden = !reg;
+  $("kHint").textContent = reg
+    ? "Minst 12 tecken. Koden är både användarnamn och lösenord: välj något ingen kan gissa, och spara den — den kan inte återställas."
+    : "Skriv in koden du valde när du skapade kontot.";
+  $("kKod").placeholder = reg ? "minst 12 tecken" : "din kod";
   visaKontoFel("");
 }
 function ritaKontoLage() {
   const inne = !!konto;
   $("kontobar").hidden = !inne;
-  // Kortet visas när det finns data att coacha på, och står kvar medan en
-  // nyss skapad kod fortfarande behöver skrivas av.
+  // Kortet står kvar medan en nyss vald kod fortfarande behöver sparas.
   $("kontoKort").hidden = (inne && $("kontoNyKod").hidden) || !harData();
   $("coachCard").hidden = !inne;
   if (!inne) return;
@@ -1415,42 +1421,44 @@ function ritaKontoLage() {
     $("chatForm").hidden = true;
   }
 }
-async function skapaKonto() {
-  const knapp = $("kSkapa");
+async function skickaKod(e) {
+  e.preventDefault();
+  const knapp = $("kSkicka");
   if (knapp.disabled) return;
+  const kod = $("kKod").value.trim();
+  if (registrerar && kod.length < 12) {
+    visaKontoFel("Koden måste vara minst 12 tecken.");
+    return;
+  }
   knapp.disabled = true;
   visaKontoFel("");
   try {
-    const r = await fetch("/api/registrera", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const r = await fetch(registrerar ? "/api/registrera" : "/api/logga-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kod }),
+    });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.kod) { visaKontoFel(d.fel || "Kunde inte skapa en kod. Prova igen."); return; }
-    $("kNyKod").textContent = d.kod;
-    visaKontoVy("nykod");
+    if (!r.ok) { visaKontoFel(d.fel || "Något gick fel. Prova igen."); return; }
+    $("kKod").value = "";
+    if (registrerar) {
+      // Visa koden en gång till så den hinner sparas innan kortet göms.
+      $("kNyKod").textContent = kod;
+      visaKontoVy("nykod");
+    } else {
+      visaKontoVy("start");
+    }
     await hamtaKonto();
   } catch (fel) {
     visaKontoFel("Kunde inte nå servern. Kontrollera din uppkoppling.");
   } finally { knapp.disabled = false; }
 }
-async function loggaInMedKod(e) {
-  e.preventDefault();
-  const knapp = $("kLoggaIn");
-  if (knapp.disabled) return;
-  knapp.disabled = true;
-  visaKontoFel("");
+async function foreslaKod() {
   try {
-    const r = await fetch("/api/logga-in", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kod: $("kKod").value }),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) { visaKontoFel(d.fel || "Kunde inte logga in. Prova igen."); return; }
-    $("kKod").value = "";
-    visaKontoVy("start");
-    await hamtaKonto();
-  } catch (fel) {
-    visaKontoFel("Kunde inte nå servern. Kontrollera din uppkoppling.");
-  } finally { knapp.disabled = false; }
+    const r = await fetch("/api/foresla-kod");
+    const d = await r.json();
+    if (d && d.kod) { $("kKod").value = d.kod; $("kKod").focus(); }
+  } catch (fel) { visaKontoFel("Kunde inte hämta ett förslag just nu."); }
 }
 
 /* ----------------------------------------------------------- coach --- */
@@ -1592,10 +1600,9 @@ function koppla() {
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
   if (mq.addEventListener) mq.addEventListener("change", () => { if (harData()) rita(); });
   $("merDetaljer").addEventListener("toggle", () => { if ($("merDetaljer").open) ritaMer(); });
-  $("kSkapa").addEventListener("click", skapaKonto);
-  $("kHarKod").addEventListener("click", () => { visaKontoVy("loggain"); $("kKod").focus(); });
-  $("kTillbaka").addEventListener("click", () => visaKontoVy("start"));
-  $("kodForm").addEventListener("submit", loggaInMedKod);
+  $("kodForm").addEventListener("submit", skickaKod);
+  $("kForesla").addEventListener("click", foreslaKod);
+  $("kVaxla").addEventListener("click", () => sattLage(!registrerar));
   $("kKlar").addEventListener("click", () => { visaKontoVy("start"); ritaKontoLage(); });
   $("kKopiera").addEventListener("click", async () => {
     try {
@@ -1603,7 +1610,6 @@ function koppla() {
       $("kKopiera").textContent = "Kopierad!";
       setTimeout(() => { $("kKopiera").textContent = "Kopiera koden"; }, 2500);
     } catch (fel) {
-      // Utan urklippsrättighet får användaren markera koden själv.
       const r = document.createRange(); r.selectNodeContents($("kNyKod"));
       const markering = getSelection(); markering.removeAllRanges(); markering.addRange(r);
       $("kKopiera").textContent = "Markerad — kopiera själv";
@@ -1612,13 +1618,15 @@ function koppla() {
   $("btnLoggaUt").addEventListener("click", async () => {
     await fetch("/api/logga-ut", { method: "POST" }).catch(() => {});
     konto = null;
-    visaKontoVy("start");
+    sattLage(false);   // den som loggat ut har redan en kod
+    $("kKod").value = "";
     ritaKontoLage();
   });
 }
 
 laddaStore();
 koppla();
+sattLage(true);
 rita();
 ritaChat();
 hamtaKonto();
