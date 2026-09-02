@@ -35,36 +35,36 @@ förlorat är kontot och månadens kvot — inte datan.
 - En Anthropic API-nyckel från <https://console.anthropic.com>.
 - Node 18+ lokalt.
 
-## Kom igång
+## Publicera
+
+### Automatiskt (ett kommando)
+
+Sätt tre miljövariabler och kör skriptet — det skapar databasen, lägger upp
+tabellerna, lägger in API-nyckeln som hemlighet och publicerar:
+
+```bash
+cd web
+./deploy.sh
+```
+
+| Variabel | Var den kommer ifrån |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → Custom token med **Account: Workers Scripts: Edit** och **Account: D1: Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | Står till höger på Cloudflares Workers-översikt |
+| `ANTHROPIC_API_KEY` | <https://console.anthropic.com> |
+
+Skriptet går att köra om: databasen skapas bara om den saknas, och tabellerna
+använder `CREATE TABLE IF NOT EXISTS`.
+
+### Manuellt
 
 ```bash
 cd web
 npm install
 npx wrangler login
-```
-
-**1. Skapa databasen** och klistra in id:t som skrivs ut i `wrangler.toml`
-(raden `database_id = "FYLL_I_HAR"`):
-
-```bash
-npx wrangler d1 create dagsformen
-```
-
-**2. Lägg upp tabellerna:**
-
-```bash
+npx wrangler d1 create dagsformen     # klistra in id:t i wrangler.toml
 npm run db:init
-```
-
-**3. Lägg in API-nyckeln** som hemlighet (hamnar aldrig i koden eller i git):
-
-```bash
 npx wrangler secret put ANTHROPIC_API_KEY
-```
-
-**4. Publicera:**
-
-```bash
 npm run deploy
 ```
 
@@ -122,6 +122,7 @@ src/index.ts    Router, registrering, inloggning, kvotkontroll
 src/auth.ts     Inloggningskoder, sessioner, kakor
 src/kvot.ts     Kostnadsberäkning och de två taken
 src/coach.ts    Prompt till Claude och strömning tillbaka till webbläsaren
+deploy.sh       Publicerar allt i ett kommando
 public/         Frontend (samma app som artifact-versionen)
 schema.sql      Tabeller
 ```
