@@ -118,6 +118,20 @@ export default {
     if (url.pathname === "/api/mig" && request.method === "GET") {
       return anv ? migStatus(anv, env) : json({ inloggad: false });
     }
+    // Diagnostik: visar VILKA miljövariabler Workern ser, aldrig deras värden.
+    // Gör skillnad på "hemligheten saknas" och "hemligheten heter något annat".
+    if (url.pathname === "/api/diagnostik" && request.method === "GET") {
+      if (!anv) return json({ fel: "Logga in med din kod först." }, 401);
+      const namn = Object.keys(env as unknown as Record<string, unknown>).sort();
+      return json({
+        variabelnamn: namn,
+        harAnthropicNyckel: typeof env.ANTHROPIC_API_KEY === "string" && env.ANTHROPIC_API_KEY.length > 0,
+        nyckelLangd: typeof env.ANTHROPIC_API_KEY === "string" ? env.ANTHROPIC_API_KEY.length : null,
+        nyckelPrefix: typeof env.ANTHROPIC_API_KEY === "string" ? env.ANTHROPIC_API_KEY.slice(0, 7) : null,
+        manadstak: env.MANADSTAK_USD,
+        svarPerAnvandare: env.SVAR_PER_ANVANDARE,
+      });
+    }
     if (url.pathname === "/api/coach" && request.method === "POST") {
       if (!anv) return json({ fel: "Logga in med din kod först." }, 401);
       return coach(request, env, anv, ctx);
