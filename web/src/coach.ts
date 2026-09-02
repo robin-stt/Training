@@ -44,12 +44,26 @@ export function giltigBegaran(b: unknown): b is CoachBegaran {
   return true;
 }
 
+/** Kortar ner ett fel till något som går att felsöka på utan att röja nyckeln. */
+function felText(fel: unknown): string {
+  if (fel instanceof Anthropic.RateLimitError) return "Coachen är hårt belastad just nu — prova igen om en stund.";
+  if (fel instanceof Anthropic.AuthenticationError) return "API-nyckeln avvisades av Anthropic. Kontrollera att ANTHROPIC_API_KEY är rätt.";
+  if (fel instanceof Anthropic.APIError) return `Anthropic svarade ${fel.status}: ${String(fel.message).slice(0, 300)}`;
+  return `Oväntat fel: ${fel instanceof Error ? fel.message.slice(0, 300) : String(fel).slice(0, 300)}`;
+}
+
 export async function stromaCoach(
   env: Env,
   anvandareId: string,
   begaran: CoachBegaran,
   ctx: ExecutionContext,
 ): Promise<Response> {
+  if (!env.ANTHROPIC_API_KEY) {
+    return new Response(
+      "Coachen är inte konfigurerad ännu: API-nyckeln saknas. Lägg till ANTHROPIC_API_KEY som Secret under Settings → Variables and Secrets i Cloudflare.",
+      { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } },
+    );
+  }
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   const dataJson = JSON.stringify(begaran.data).slice(0, 40000);
@@ -95,9 +109,8 @@ export async function stromaCoach(
       } catch (fel) {
         // Ett svar som aldrig blev av ska inte kosta adepten ett av månadens.
         if (!nagotSkrivet) ctx.waitUntil(angraReservation(env, anvandareId));
-        const text = fel instanceof Anthropic.RateLimitError
-          ? "(Coachen är hårt belastad just nu — prova igen om en stund.)"
-          : "(Något gick fel när coachen skulle svara. Prova igen.)";
+        console.error("coach-anrop misslyckades:", fel);
+        const text = "(" + felText(fel) + ")";
         controller.enqueue(encoder.encode(nagotSkrivet ? "\n\n" + text : text));
       } finally {
         controller.close();
