@@ -1,0 +1,1566 @@
+<title>Dagsformen</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Se var din kondition ligger jämfört med din åldersgrupp — utifrån din egen Apple Hälsa-export.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --blue: #2a78d6;
+  --blue-svag: #9ec5f4;
+  --orange: #eb6834;
+  --zon1: #86b6ef;
+  --zon2: #2a78d6;
+  --zon3: #104281;
+  --good: #006300;
+  --bad: #d03b3b;
+  --wash: rgba(42, 120, 214, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --blue: #3987e5; --blue-svag: #1c5cab; --orange: #d95926;
+    --zon1: #9ec5f4; --zon2: #3987e5; --zon3: #184f95;
+    --good: #0ca30c; --bad: #e66767; --wash: rgba(57, 135, 229, 0.12);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --blue: #3987e5; --blue-svag: #1c5cab; --orange: #d95926;
+  --zon1: #9ec5f4; --zon2: #3987e5; --zon3: #184f95;
+  --good: #0ca30c; --bad: #e66767; --wash: rgba(57, 135, 229, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font-family: "Familjen Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px; line-height: 1.5;
+}
+.wrap { max-width: 620px; margin: 0 auto; padding: 16px 14px 56px; }
+header.app { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+header.app h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; flex: 1; }
+.profilbar { display: flex; align-items: center; gap: 6px; }
+select, input[type="text"], input[type="number"] {
+  font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; max-width: 100%;
+}
+select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+p.privacy { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+
+button {
+  font: inherit; font-weight: 600; font-size: 15px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 16px; cursor: pointer;
+}
+button:hover { border-color: var(--axis); }
+button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+button.primary:hover { filter: brightness(1.08); }
+button.liten { font-size: 13.5px; padding: 6px 11px; border-radius: 8px; font-weight: 500; }
+button[disabled] { opacity: 0.55; cursor: default; }
+button.danger { color: var(--bad); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+.card h2 { font-size: 16px; font-weight: 600; margin: 0 0 2px; }
+.card .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 10px; }
+.rad { display: flex; gap: 8px; flex-wrap: wrap; }
+.rad.mellan { justify-content: space-between; align-items: center; }
+
+/* Hero — konditionsnivå */
+.hero { text-align: center; padding: 22px 16px; }
+.hero .etikett { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.hero .niva { font-size: 40px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 6px 0 2px; }
+.hero .jamfor { color: var(--ink-2); font-size: 15px; max-width: 34ch; margin: 0 auto; }
+.hero .rikt { display: inline-block; margin-top: 10px; font-size: 14px; font-weight: 600; padding: 4px 12px; border-radius: 999px; background: var(--wash); }
+.hero .rikt.upp { color: var(--good); }
+.hero .rikt.ner { color: var(--bad); }
+.skala { display: flex; gap: 2px; margin: 16px auto 6px; max-width: 380px; }
+.skala i { flex: 1; height: 8px; background: var(--grid); border-radius: 2px; }
+.skala i:first-child { border-radius: 999px 2px 2px 999px; }
+.skala i:last-child { border-radius: 2px 999px 999px 2px; }
+.skala i.pa { background: var(--blue); }
+.skala-txt { display: flex; justify-content: space-between; max-width: 380px; margin: 0 auto; font-size: 11.5px; color: var(--muted); }
+.hero .vo2 { color: var(--muted); font-size: 12.5px; margin-top: 12px; }
+
+/* Veckan */
+.vecka-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.vecka-post .label { font-size: 13px; color: var(--ink-2); }
+.vecka-post .value { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+.vecka-post .value small { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.vecka-post .meta { font-size: 12.5px; color: var(--muted); }
+.vecka-post .meta b { color: var(--ink-2); font-weight: 600; }
+.malbar { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; margin-top: 5px; }
+.malbar i { display: block; height: 100%; background: var(--blue); }
+.malbar i.klar { background: var(--good); }
+
+/* Coach */
+.coach-head { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 4px; }
+.coach-avatar { flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--wash); display: grid; place-items: center; font-size: 19px; }
+#tips { margin-top: 12px; }
+#tips h3 { font-size: 15px; margin: 12px 0 4px; }
+#tips p, #tips li { color: var(--ink-2); margin: 6px 0; }
+#tips strong { color: var(--ink); }
+#tips ol, #tips ul { padding-left: 20px; margin: 6px 0; }
+#chat { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+#chat:empty { margin: 0; }
+.msg-user { align-self: flex-end; max-width: 88%; background: var(--wash); border-radius: 12px 12px 4px 12px; padding: 8px 12px; }
+.msg-coach .who { font-size: 11.5px; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+.msg-coach h3 { font-size: 15px; margin: 12px 0 4px; }
+.msg-coach p, .msg-coach li { color: var(--ink-2); margin: 6px 0; }
+.msg-coach strong { color: var(--ink); }
+.msg-coach ol, .msg-coach ul { padding-left: 20px; margin: 6px 0; }
+.chat-input { display: flex; gap: 8px; margin-top: 12px; }
+.chat-input input { flex: 1; background: var(--page); }
+.disclaimer { color: var(--muted); font-size: 12.5px; margin: 12px 0 0; }
+
+/* Diagram */
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); margin-top: 6px; flex-wrap: wrap; }
+.chart .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+.chart .legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+.chart .legend .linekey { width: 14px; height: 2px; border-radius: 1px; }
+.chart { position: relative; }
+.tip { position: absolute; pointer-events: none; z-index: 5; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 10px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.14); display: none; }
+.tip .d { color: var(--muted); margin-bottom: 2px; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.tip .row i { width: 10px; height: 2px; border-radius: 1px; flex: none; }
+.tip .row b { font-variant-numeric: tabular-nums; }
+.axis-text { font-size: 11px; fill: var(--muted); font-family: inherit; font-variant-numeric: tabular-nums; }
+
+/* Pulszoner */
+.zonbar { display: flex; gap: 2px; height: 26px; border-radius: 6px; overflow: hidden; margin: 10px 0 8px; }
+.zonbar i { display: block; }
+.zonlista { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.zonlista .z { display: flex; align-items: center; gap: 8px; }
+.zonlista .z i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.zonlista .z span { color: var(--ink-2); flex: 1; }
+.zonlista .z b { font-variant-numeric: tabular-nums; }
+
+/* Tabell */
+.tablewrap { overflow-x: auto; }
+table.pass { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.pass th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 12.5px; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+table.pass td { padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.pass tr:last-child td { border-bottom: 0; }
+
+/* Saknas-lista */
+.saknas li { color: var(--ink-2); font-size: 14px; margin: 5px 0; }
+.saknas { padding-left: 20px; margin: 4px 0 0; }
+
+/* Tomt läge / import */
+#drop { border: 2px dashed var(--axis); border-radius: 12px; padding: 24px 16px; text-align: center;
+  color: var(--ink-2); margin: 14px 0 8px; cursor: pointer; transition: background .15s, border-color .15s; }
+#drop.over, #drop:hover { background: var(--wash); border-color: var(--blue); }
+#drop strong { color: var(--ink); display: block; margin-bottom: 2px; }
+#empty ol { padding-left: 20px; margin: 6px 0; }
+#empty li { margin: 4px 0; color: var(--ink-2); }
+#empty h3 { font-size: 15px; margin: 16px 0 2px; }
+#status { margin: 10px 0; font-size: 14px; color: var(--ink-2); }
+#status .bar { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+#status .bar i { display: block; height: 100%; width: 0; background: var(--blue); transition: width .2s; }
+#status.error { color: var(--bad); }
+
+/* Profilformulär */
+.falt { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.falt label { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.falt .hint { font-size: 12px; color: var(--muted); }
+.tvakol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+details.mer > summary { cursor: pointer; font-weight: 600; padding: 12px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.mer > summary::-webkit-details-marker { display: none; }
+details.mer > summary::before { content: "▸"; color: var(--muted); }
+details.mer[open] > summary::before { content: "▾"; }
+footer.app { color: var(--muted); font-size: 12.5px; margin-top: 20px; text-align: center; }
+@media (min-width: 680px) { .wrap { max-width: 760px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="app">
+    <h1>Dagsformen</h1>
+    <div class="profilbar" id="kontobar" hidden>
+      <span class="sub" id="kontoEpost" style="margin:0"></span>
+      <button class="liten" id="btnLoggaUt">Logga ut</button>
+    </div>
+    <div class="profilbar" id="profilbar" hidden>
+      <select id="profilVal" aria-label="Välj profil"></select>
+      <button class="liten" id="btnNyProfil" title="Ny profil">+</button>
+    </div>
+  </header>
+  <p class="privacy">🔒 Din hälsodata stannar i din webbläsare — den sparas aldrig på servern. Coachen får bara en sammanfattning av dina nyckeltal, och bara när du klickar.</p>
+
+  <div id="status" hidden></div>
+
+  <!-- Konto (behövs bara för coachen) -->
+  <div class="card" id="kontoKort" hidden>
+    <h2 id="kontoRubrik">Skapa konto för coachen</h2>
+    <p class="sub" id="kontoText">Kontot behövs bara för att prata med coachen. Din hälsodata stannar i din egen webbläsare — den skickas aldrig till servern.</p>
+    <form id="kontoForm">
+      <div class="falt">
+        <label for="kEpost">E-post</label>
+        <input type="email" id="kEpost" autocomplete="email" required>
+      </div>
+      <div class="falt">
+        <label for="kLosen">Lösenord</label>
+        <input type="password" id="kLosen" autocomplete="current-password" minlength="10" required>
+        <span class="hint">Minst 10 tecken.</span>
+      </div>
+      <div class="rad">
+        <button class="primary" type="submit" id="kSkicka">Skapa konto</button>
+        <button type="button" class="liten" id="kVaxla">Jag har redan ett konto</button>
+      </div>
+      <p class="sub" id="kFel" style="color:var(--bad);margin:10px 0 0" hidden></p>
+    </form>
+  </div>
+
+  <!-- Tomt läge -->
+  <div class="card" id="empty">
+    <h2>Hur ligger du till egentligen?</h2>
+    <p class="sub">Ge mig din hälsodata från iPhone så visar jag var din kondition ligger jämfört med andra i din ålder — och ger dig konkreta träningstips.</p>
+    <div id="drop" role="button" tabindex="0">
+      <strong>Släpp din zip-fil här</strong>
+      eller tryck för att välja fil
+    </div>
+    <h3>Så hämtar du filen</h3>
+    <ol>
+      <li>Öppna <strong>Hälsa</strong>-appen på iPhone.</li>
+      <li>Tryck på din profilbild uppe till höger.</li>
+      <li>Välj <strong>Exportera alla hälsodata</strong> och spara zip-filen.</li>
+      <li>Kom tillbaka hit och släpp in den. Stora filer tar en stund — allt sker på din egen enhet.</li>
+    </ol>
+    <p class="sub" style="margin-top:10px">Använder du appen <strong>Health Auto Export</strong> funkar dess CSV-zip lika bra.</p>
+  </div>
+
+  <input type="file" id="fileZip" accept=".zip" hidden>
+  <input type="file" id="fileJson" accept=".json" hidden>
+
+  <!-- Huvudvy -->
+  <div id="dash" hidden>
+    <div class="card hero" id="hero"></div>
+    <div class="card" id="veckan"></div>
+
+    <div class="card" id="coachCard">
+      <div class="coach-head">
+        <span class="coach-avatar" aria-hidden="true">🎽</span>
+        <div>
+          <h2>Din coach</h2>
+          <p class="sub" style="margin:0">Läser dina nyckeltal och ger konkreta råd. Använder din egen Claude-tillgång — första gången får du en godkännandefråga.</p>
+        </div>
+      </div>
+      <div class="rad" id="tipsStart"><button class="primary" id="btnTips">Ge mig mina träningstips</button></div>
+      <div id="tips"></div>
+      <div id="chat"></div>
+      <form class="chat-input" id="chatForm" hidden>
+        <input type="text" id="chatBox" placeholder="Fråga coachen …" autocomplete="off" maxlength="500">
+        <button class="primary" type="submit" id="btnSend">Skicka</button>
+        <button type="button" class="liten" id="btnStop" hidden>Stoppa</button>
+      </form>
+      <p class="disclaimer">Dagsformen är ett träningsverktyg, inte sjukvård. Råden bygger på dina mätvärden och ersätter aldrig medicinsk rådgivning — sök vård vid symtom eller oro.</p>
+    </div>
+
+    <div class="card chart" id="trend"></div>
+
+    <details class="mer" id="merDetaljer">
+      <summary>Visa mer detaljer</summary>
+      <div id="merInnehall"></div>
+    </details>
+
+    <div class="card" id="saknasCard" hidden>
+      <h2>Detta kan jag visa när du har mer data</h2>
+      <ul class="saknas" id="saknasLista"></ul>
+    </div>
+
+    <details class="mer" id="installningar">
+      <summary>Profil, mål och data</summary>
+      <div class="card" style="margin-top:0">
+        <h2>Om dig</h2>
+        <p class="sub">Frivilligt — men utan ålder och kön kan jag inte säga var din kondition ligger jämfört med andra.</p>
+        <div class="falt">
+          <label for="pNamn">Namn på profilen</label>
+          <input type="text" id="pNamn" maxlength="30" placeholder="T.ex. Robin">
+        </div>
+        <div class="tvakol">
+          <div class="falt">
+            <label for="pAlder">Ålder</label>
+            <input type="number" id="pAlder" min="10" max="100" placeholder="år">
+          </div>
+          <div class="falt">
+            <label for="pKon">Kön</label>
+            <select id="pKon">
+              <option value="">Vill inte ange</option>
+              <option value="man">Man</option>
+              <option value="kvinna">Kvinna</option>
+            </select>
+          </div>
+        </div>
+        <div class="tvakol">
+          <div class="falt">
+            <label for="pLangd">Längd (cm)</label>
+            <input type="number" id="pLangd" min="100" max="230" placeholder="cm">
+          </div>
+          <div class="falt">
+            <label for="pMaxpuls">Maxpuls</label>
+            <input type="number" id="pMaxpuls" min="120" max="220" placeholder="valfritt">
+            <span class="hint">Vet du inte? Lämna tom.</span>
+          </div>
+        </div>
+        <h2 style="margin-top:16px">Mina mål per vecka</h2>
+        <p class="sub">Lämna tomt om du inte vill ha mål.</p>
+        <div class="tvakol">
+          <div class="falt">
+            <label for="mPass">Träningspass</label>
+            <input type="number" id="mPass" min="1" max="21" placeholder="st/vecka">
+          </div>
+          <div class="falt">
+            <label for="mTid">Träningstid</label>
+            <input type="number" id="mTid" min="10" max="2000" placeholder="min/vecka">
+          </div>
+        </div>
+        <div class="falt">
+          <label for="mSteg">Steg per dag</label>
+          <input type="number" id="mSteg" min="1000" max="50000" placeholder="steg/dag">
+        </div>
+        <div class="rad" style="margin-top:6px">
+          <button class="primary" id="btnSpara">Spara</button>
+          <span id="sparatKvitto" class="sub" style="align-self:center;margin:0"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Data</h2>
+        <div class="rad">
+          <button id="btnImport">Importera ny export</button>
+          <button id="btnBackup">Ladda ner säkerhetskopia</button>
+          <button id="btnRestore">Återställ kopia</button>
+        </div>
+        <div class="rad" style="margin-top:8px">
+          <button class="danger liten" id="btnClear">Radera den här profilen</button>
+        </div>
+        <p class="sub" id="importLog" style="margin:10px 0 0"></p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- fflate 0.8.2 (MIT), levereras med appen så importen inte beror på en extern CDN -->
+<script src="/fflate.js"></script>
+<script>
+"use strict";
+/* =========================================================== lagring === */
+const LS = "dagsformen-v1";
+const tomProfil = () => ({ namn: "Jag", profil: {}, mal: {}, daily: {}, workouts: [], hrPass: [], imports: [], chat: [] });
+let store = { profiler: {}, aktiv: null };
+let P = null;                 // aktiv profil
+
+function laddaStore() {
+  try {
+    const raw = localStorage.getItem(LS);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.profiler && Object.keys(s.profiler).length) store = s;
+    }
+  } catch (e) { /* privat läge — börja tomt */ }
+  if (!Object.keys(store.profiler).length) {
+    const id = "p" + Date.now();
+    store.profiler[id] = tomProfil();
+    store.aktiv = id;
+  }
+  if (!store.profiler[store.aktiv]) store.aktiv = Object.keys(store.profiler)[0];
+  P = store.profiler[store.aktiv];
+  for (const k of ["hrPass", "chat", "imports", "workouts"]) if (!Array.isArray(P[k])) P[k] = [];
+  if (!P.profil) P.profil = {};
+  if (!P.mal) P.mal = {};
+}
+function spara() {
+  try { localStorage.setItem(LS, JSON.stringify(store)); }
+  catch (e) { visaStatus("Kunde inte spara lokalt — lagringen kan vara full. Ladda ner en säkerhetskopia.", true); }
+}
+function harData() { return Object.keys(P.daily).length > 0 || P.workouts.length > 0; }
+
+/* ========================================================== hjälpare === */
+const $ = id => document.getElementById(id);
+const KJ = 4.184, MI = 1.609344, DAG = 864e5;
+const fmtInt = n => Math.round(n).toLocaleString("sv-SE");
+const fmt1 = n => n.toLocaleString("sv-SE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const medel = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+function median(a) { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+function fmtPace(m) { if (!isFinite(m) || m <= 0) return "–"; const h = Math.floor(m), s = Math.round((m - h) * 60); return s === 60 ? `${h + 1}:00` : `${h}:${String(s).padStart(2, "0")}`; }
+const fmtDatum = d => { const p = d.split("-"); return `${+p[2]}/${+p[1]}`; };
+function plusDagar(iso, n) { return new Date(Date.parse(iso + "T12:00:00Z") + n * DAG).toISOString().slice(0, 10); }
+function dagarMellan(a, b) { return Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / DAG); }
+function veckodag(iso) { return (new Date(Date.parse(iso + "T12:00:00Z")).getUTCDay() + 6) % 7; } // 0 = måndag
+function veckostart(iso) { return plusDagar(iso, -veckodag(iso)); }
+function veckoNr(iso) {
+  const d = new Date(Date.parse(iso + "T12:00:00Z"));
+  d.setUTCDate(d.getUTCDate() - veckodag(iso) + 3);
+  const jan4 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  return 1 + Math.round((d - jan4) / (7 * DAG) - ((jan4.getUTCDay() + 6) % 7 - 3) / 7);
+}
+const idag = () => new Date().toISOString().slice(0, 10);
+function visaStatus(msg, fel, pct) {
+  const el = $("status"); el.hidden = false; el.className = fel ? "error" : ""; el.textContent = msg;
+  if (pct != null) { const b = document.createElement("div"); b.className = "bar"; const i = document.createElement("i"); i.style.width = pct + "%"; b.appendChild(i); el.appendChild(b); }
+  if (fel) setTimeout(() => { el.hidden = true; }, 9000);
+}
+const doljStatus = () => { $("status").hidden = true; };
+
+/* ======================================================= sammanfoga === */
+function slaIhopDaglig(rader) {
+  let n = 0;
+  for (const r of rader) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(r.datum || "")) continue;
+    const d = P.daily[r.datum] || (P.daily[r.datum] = {});
+    for (const [k, v] of Object.entries(r)) if (k !== "datum" && v != null && isFinite(v)) { d[k] = v; n++; }
+  }
+  return n;
+}
+function slaIhopPass(rader) {
+  const sedda = new Set(P.workouts.map(w => w.start));
+  let n = 0;
+  for (const w of rader) { if (!w.start || sedda.has(w.start)) continue; sedda.add(w.start); P.workouts.push(w); n++; }
+  P.workouts.sort((a, b) => a.start < b.start ? -1 : 1);
+  return n;
+}
+function slaIhopHr(sessioner) {
+  const sedda = new Set(P.hrPass.map(h => h.start));
+  for (const s of sessioner) if (s.start && !sedda.has(s.start)) { sedda.add(s.start); P.hrPass.push(s); }
+  P.hrPass.sort((a, b) => a.start < b.start ? -1 : 1);
+}
+
+/* ================================================= CSV / Health Auto === */
+function parseCsv(text) {
+  const rader = []; let rad = [], falt = "", cit = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (cit) { if (c === '"') { if (text[i + 1] === '"') { falt += '"'; i++; } else cit = false; } else falt += c; }
+    else if (c === '"') cit = true;
+    else if (c === ",") { rad.push(falt); falt = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      rad.push(falt); falt = "";
+      if (rad.length > 1 || rad[0] !== "") rader.push(rad);
+      rad = [];
+    } else falt += c;
+  }
+  if (falt !== "" || rad.length) { rad.push(falt); rader.push(rad); }
+  return rader;
+}
+function enhetsFaktor(h) {
+  if (/\(kJ\)/i.test(h)) return 1 / KJ;
+  if (/\(mi\)/i.test(h)) return MI;
+  return 1;
+}
+const HAE_DAG = [
+  [/stegräkning|step count/i, "steg"],
+  [/promenad \+ löpsträcka|walking \+ running distance/i, "distans_km"],
+  [/^aktiv energi|^active energy/i, "aktiv_energi_kcal"],
+  [/apple träningstid|apple exercise time/i, "traningstid_min"],
+  [/vilo ?hjärtfrekvens|resting heart rate/i, "vilopuls"],
+  [/hjärtfrekvensvariabilitet|heart rate variability/i, "hrv_ms"],
+  // Sömn rapporteras antingen som klumpsumma i [Sova] eller uppdelat på faser
+  // med [Sova] = 0 beroende på om klockan burits. Båda läses; den större gäller.
+  [/sömnanalyser \[sova\]|sleep analysis \[asleep\]/i, "_sova"],
+  [/sömnanalyser \[kärna\]|sleep analysis \[core\]/i, "_karna"],
+  [/sömnanalyser \[djup\]|sleep analysis \[deep\]/i, "djupsomn_timmar"],
+  [/sömnanalyser \[rem\]|sleep analysis \[rem\]/i, "_rem"],
+  [/^vikt \(|^weight \(|body mass \((?!.*index)/i, "vikt_kg"],
+  [/vo2 max/i, "vo2max"],
+];
+const HAE_PASS = [
+  [/^aktiv energi|^active energy/i, "energi_kcal"],
+  [/genom.* hjärtfrekvens|avg.* heart rate/i, "puls_medel"],
+  [/max.* hjärtfrekvens|max.* heart rate/i, "puls_max"],
+  [/^avstånd|^distance \(/i, "distans_km"],
+];
+function kolumner(rubriker, karta) {
+  const ut = {};
+  rubriker.forEach((h, i) => { for (const [re, key] of karta) if (re.test(h) && ut[key] === undefined) { ut[key] = { i, f: enhetsFaktor(h) }; break; } });
+  return ut;
+}
+function haeDaglig(text) {
+  const rader = parseCsv(text);
+  if (rader.length < 2) return [];
+  const kol = kolumner(rader[0], HAE_DAG);
+  const iDat = rader[0].findIndex(h => /datum|date/i.test(h));
+  const ut = [];
+  for (const r of rader.slice(1)) {
+    const rec = { datum: (r[iDat] || "").slice(0, 10) };
+    for (const [key, { i, f }] of Object.entries(kol)) { const v = parseFloat(r[i]); if (isFinite(v)) rec[key] = Math.round(v * f * 100) / 100; }
+    const faser = (rec._karna || 0) + (rec.djupsomn_timmar || 0) + (rec._rem || 0);
+    const somn = Math.max(rec._sova || 0, faser);
+    delete rec._sova; delete rec._karna; delete rec._rem;
+    if (somn > 0) rec.somn_timmar = Math.round(somn * 100) / 100;
+    if (!rec.djupsomn_timmar) delete rec.djupsomn_timmar;
+    ut.push(rec);
+  }
+  return ut;
+}
+function haePass(text) {
+  const rader = parseCsv(text);
+  if (rader.length < 2) return [];
+  const h = rader[0], kol = kolumner(h, HAE_PASS);
+  const iTyp = h.findIndex(x => /workout type|typ av träning/i.test(x));
+  const iStart = h.findIndex(x => /^start/i.test(x));
+  const iTid = h.findIndex(x => /^duration|varaktighet/i.test(x));
+  const ut = [];
+  for (const r of rader.slice(1)) {
+    const start = (r[iStart] || "").replace(" ", "T").slice(0, 16);
+    if (!/^\d{4}-\d{2}-\d{2}T/.test(start)) continue;
+    const w = { start, typ: r[iTyp] || "Träning" };
+    const d = (r[iTid] || "").split(":").map(Number);
+    if (d.length === 3 && d.every(isFinite)) w.varaktighet_min = Math.round((d[0] * 60 + d[1] + d[2] / 60) * 10) / 10;
+    for (const [key, { i, f }] of Object.entries(kol)) { const v = parseFloat(r[i]); if (isFinite(v) && v > 0) w[key] = Math.round(v * f * 10) / 10; }
+    ut.push(w);
+  }
+  return ut;
+}
+// Per-minut-puls: "<Typ>-Puls-ÅÅÅÅMMDD_HHMMSS.csv" med kolumnen Avg.
+function haePuls(namn, text) {
+  const m = namn.match(/-(?:Puls|Heart Rate)-(\d{8})_(\d{6})\.csv$/i);
+  if (!m) return null;
+  const d = m[1], t = m[2];
+  const start = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T${t.slice(0, 2)}:${t.slice(2, 4)}`;
+  const rader = parseCsv(text);
+  if (rader.length < 2) return null;
+  const iAvg = rader[0].findIndex(h => /^avg/i.test(h));
+  if (iAvg < 0) return null;
+  const hr = [];
+  for (const r of rader.slice(1)) { const v = parseFloat(r[iAvg]); if (isFinite(v) && v > 30) hr.push(Math.round(v)); }
+  return hr.length ? { start, hr } : null;
+}
+
+/* =========================================== Apple Hälsa export.xml === */
+const XML_SUM = { HKQuantityTypeIdentifierStepCount: "steg", HKQuantityTypeIdentifierDistanceWalkingRunning: "distans_km", HKQuantityTypeIdentifierActiveEnergyBurned: "aktiv_energi_kcal", HKQuantityTypeIdentifierAppleExerciseTime: "traningstid_min" };
+const XML_SNITT = { HKQuantityTypeIdentifierRestingHeartRate: "vilopuls", HKQuantityTypeIdentifierHeartRateVariabilitySDNN: "hrv_ms", HKQuantityTypeIdentifierVO2Max: "vo2max" };
+const PASSNAMN = { Running: "Löpning", Walking: "Promenad", Cycling: "Cykling", TraditionalStrengthTraining: "Styrketräning", FunctionalStrengthTraining: "Funktionell styrka", HighIntensityIntervalTraining: "HIIT", Swimming: "Simning", Yoga: "Yoga", Hiking: "Vandring", Elliptical: "Crosstrainer", Rowing: "Rodd", CrossTraining: "Cirkelträning", CoreTraining: "Bålträning", StairClimbing: "Trappor", Soccer: "Fotboll", Tennis: "Tennis", Padel: "Padel", DownhillSkiing: "Utförsåkning", CrossCountrySkiing: "Längdskidor", Other: "Övrigt" };
+
+// "2026-06-01 23:30:00 +0300" → ms. Både mellanslaget före tiden och det före
+// tidszonen måste bort för att Date.parse ska godta strängen.
+function hkDatum(s) { return Date.parse(String(s || "").replace(" ", "T").replace(/\s+(?=[+-]\d{2}:?\d{2}$)/, "")); }
+function attr(tag) { const o = {}; const re = /([\w:]+)="([^"]*)"/g; let m; while ((m = re.exec(tag))) o[m[1]] = m[2]; return o; }
+
+function xmlAggregator() {
+  const sum = {}, snitt = {}, sist = {}, somn = {}, djup = {}, pass = [];
+  let nu = null;
+  function post(tag) {
+    const a = attr(tag), t = a.type; if (!t) return;
+    const dag = (a.startDate || "").slice(0, 10); if (!dag) return;
+    const v = parseFloat(a.value);
+    if (t in XML_SUM) {
+      if (!isFinite(v)) return;
+      const key = XML_SUM[t];
+      let f = 1;
+      if (key === "distans_km" && a.unit === "mi") f = MI;
+      if (key === "aktiv_energi_kcal" && a.unit === "kJ") f = 1 / KJ;
+      ((sum[dag] ||= {})[key] ||= {})[a.sourceName || "?"] = (sum[dag][key][a.sourceName || "?"] || 0) + v * f;
+    } else if (t in XML_SNITT) {
+      if (isFinite(v)) ((snitt[dag] ||= {})[XML_SNITT[t]] ||= []).push(v);
+    } else if (t === "HKQuantityTypeIdentifierBodyMass") {
+      if (!isFinite(v)) return;
+      const kg = v * (a.unit === "lb" ? 0.4536 : 1);
+      if (!sist[dag] || a.startDate > sist[dag].t) sist[dag] = { t: a.startDate, v: kg };
+    } else if (t === "HKCategoryTypeIdentifierSleepAnalysis" && /Asleep/.test(a.value || "")) {
+      const s = hkDatum(a.startDate), e = hkDatum(a.endDate);
+      if (!isFinite(s) || !isFinite(e)) return;
+      const natt = (a.endDate || "").slice(0, 10), k = a.sourceName || "?", h = (e - s) / 36e5;
+      (somn[natt] ||= {})[k] = (somn[natt][k] || 0) + h;
+      if (/Deep/.test(a.value)) (djup[natt] ||= {})[k] = (djup[natt][k] || 0) + h;
+    }
+  }
+  function passStart(tag) {
+    const a = attr(tag);
+    const start = (a.startDate || "").replace(" ", "T").slice(0, 16);
+    if (!start) { nu = null; return; }
+    const rå = (a.workoutActivityType || "").replace("HKWorkoutActivityType", "");
+    const w = { start, typ: PASSNAMN[rå] || rå || "Träning" };
+    const d = parseFloat(a.duration);
+    if (isFinite(d)) w.varaktighet_min = Math.round((a.durationUnit === "s" ? d / 60 : d) * 10) / 10;
+    const km = parseFloat(a.totalDistance);
+    if (isFinite(km) && km > 0) w.distans_km = Math.round(km * (a.totalDistanceUnit === "mi" ? MI : 1) * 100) / 100;
+    const en = parseFloat(a.totalEnergyBurned);
+    if (isFinite(en) && en > 0) w.energi_kcal = Math.round(en * (a.totalEnergyBurnedUnit === "kJ" ? 1 / KJ : 1));
+    nu = w;
+  }
+  function passStat(tag) {
+    if (!nu) return;
+    const a = attr(tag), v = parseFloat(a.sum ?? a.average), t = a.type || "";
+    if (!isFinite(v)) return;
+    if (/Distance/.test(t) && nu.distans_km == null) nu.distans_km = Math.round(v * (a.unit === "mi" ? MI : 1) * 100) / 100;
+    if (/ActiveEnergyBurned/.test(t) && nu.energi_kcal == null) nu.energi_kcal = Math.round(v * (a.unit === "kJ" ? 1 / KJ : 1));
+    if (/HeartRate$/.test(t)) {
+      if (a.average) nu.puls_medel = Math.round(parseFloat(a.average));
+      if (a.maximum) nu.puls_max = Math.round(parseFloat(a.maximum));
+    }
+  }
+  const passSlut = () => { if (nu) pass.push(nu); nu = null; };
+  function klart() {
+    const dagar = new Set([...Object.keys(sum), ...Object.keys(snitt), ...Object.keys(sist), ...Object.keys(somn)]);
+    const daglig = [];
+    for (const dag of dagar) {
+      const r = { datum: dag };
+      if (sum[dag]) for (const [key, kallor] of Object.entries(sum[dag])) {
+        // iPhone och klockan loggar samma aktivitet — bästa källan, inte summan.
+        const b = Math.max(...Object.values(kallor));
+        if (b > 0) r[key] = Math.round(b * 100) / 100;
+      }
+      if (snitt[dag]) for (const [key, v] of Object.entries(snitt[dag])) r[key] = Math.round(medel(v) * 10) / 10;
+      if (sist[dag]) r.vikt_kg = Math.round(sist[dag].v * 10) / 10;
+      if (somn[dag]) r.somn_timmar = Math.round(Math.max(...Object.values(somn[dag])) * 100) / 100;
+      if (djup[dag]) r.djupsomn_timmar = Math.round(Math.max(...Object.values(djup[dag])) * 100) / 100;
+      daglig.push(r);
+    }
+    return { daglig, pass };
+  }
+  return { post, passStart, passStat, passSlut, klart };
+}
+
+async function importeraAppleZip(fil) {
+  const agg = xmlAggregator(), dec = new TextDecoder();
+  let svans = "";
+  function skanna(text, sista) {
+    let t = svans + text;
+    if (!sista) { const c = t.lastIndexOf(">"); if (c < 0) { svans = t; return; } svans = t.slice(c + 1); t = t.slice(0, c + 1); }
+    else svans = "";
+    const re = /<(Record|Workout|WorkoutStatistics|\/Workout)\b[^>]*>/g;
+    let m;
+    while ((m = re.exec(t))) {
+      if (m[1] === "Record") agg.post(m[0]);
+      else if (m[1] === "Workout") agg.passStart(m[0]);
+      else if (m[1] === "WorkoutStatistics") agg.passStat(m[0]);
+      else agg.passSlut();
+    }
+  }
+  await new Promise((ok, fel) => {
+    let hittad = false, klar = false;
+    const uz = new fflate.Unzip(); uz.register(fflate.UnzipInflate);
+    uz.onfile = f => {
+      if (!f.name.endsWith("export.xml") || f.name.includes("export_cda")) return;
+      hittad = true;
+      f.ondata = (e, data, sista) => {
+        if (e) return fel(e);
+        skanna(dec.decode(data, { stream: !sista }), sista);
+        if (sista) { klar = true; ok(); }
+      };
+      f.start();
+    };
+    const CH = 4 << 20; let off = 0;
+    (async () => {
+      try {
+        while (off < fil.size && !klar) {
+          const buf = new Uint8Array(await fil.slice(off, Math.min(off + CH, fil.size)).arrayBuffer());
+          off += buf.length;
+          uz.push(buf, off >= fil.size);
+          visaStatus(`Läser din hälsodata … ${Math.round(off / fil.size * 100)} %`, false, off / fil.size * 100);
+          await new Promise(r => setTimeout(r));
+        }
+        if (!hittad) fel(new Error("Ingen export.xml hittades i zip-filen."));
+        else if (!klar) ok();
+      } catch (e) { fel(e); }
+    })();
+  });
+  const r = agg.klart();
+  return { daglig: r.daglig, pass: r.pass, hr: [] };
+}
+
+async function importeraHaeZip(fil) {
+  const buf = new Uint8Array(await fil.arrayBuffer());
+  const filer = await new Promise((ok, fel) => {
+    fflate.unzip(buf, { filter: f => /(^|\/)(HealthAutoExport-|Workouts-)[^/]*\.csv$/.test(f.name) || /-(?:Puls|Heart Rate)-\d{8}_\d{6}\.csv$/i.test(f.name) },
+      (e, ut) => e ? fel(e) : ok(ut));
+  });
+  const dec = new TextDecoder();
+  let daglig = [], pass = [];
+  const hr = [];
+  for (const [namn, data] of Object.entries(filer)) {
+    const text = dec.decode(data);
+    if (/(^|\/)HealthAutoExport-/.test(namn)) daglig = daglig.concat(haeDaglig(text));
+    else if (/(^|\/)Workouts-/.test(namn)) pass = pass.concat(haePass(text));
+    else { const s = haePuls(namn, text); if (s) hr.push(s); }
+  }
+  if (!daglig.length && !pass.length) throw new Error("Zip-filen innehöll inga hälsodatafiler. Välj CSV-format i Health Auto Export-appen.");
+  return { daglig, pass, hr };
+}
+
+async function zipNamn(fil) {
+  return new Promise((ok, fel) => {
+    const namn = [];
+    const uz = new fflate.Unzip();
+    uz.onfile = f => namn.push(f.name);
+    fil.slice(0, Math.min(fil.size, 4 << 20)).arrayBuffer().then(b => {
+      try { uz.push(new Uint8Array(b), fil.size <= (4 << 20)); } catch (e) { /* central dir sist — ok */ }
+      ok(namn);
+    }, fel);
+  });
+}
+
+async function taEmotFil(fil) {
+  if (!fil) return;
+  if (/\.json$/i.test(fil.name)) return aterstall(fil);
+  if (!/\.zip$/i.test(fil.name)) return visaStatus("Välj en .zip-fil från Hälsa-appen eller Health Auto Export.", true);
+  visaStatus("Öppnar filen …", false, 2);
+  try {
+    const huvud = new Uint8Array(await fil.slice(0, 4).arrayBuffer());
+    if (huvud[0] !== 0x50 || huvud[1] !== 0x4b) throw new Error("Filen ser inte ut som en zip.");
+    const namn = await zipNamn(fil);
+    const appleFormat = namn.some(n => n.endsWith("export.xml") && !n.includes("export_cda"));
+    if (!appleFormat) visaStatus("Läser din hälsodata …", false, 30);
+    const r = appleFormat ? await importeraAppleZip(fil) : await importeraHaeZip(fil);
+    slaIhopDaglig(r.daglig);
+    const nya = slaIhopPass(r.pass);
+    slaIhopHr(r.hr);
+    P.imports.push({ datum: idag(), fil: fil.name, dagar: r.daglig.length });
+    spara(); doljStatus();
+    visaStatus(`Klart! ${r.daglig.length} dagar inlästa och ${nya} nya träningspass.`);
+    setTimeout(doljStatus, 6000);
+    rita();
+  } catch (e) { visaStatus("Importen misslyckades: " + (e && e.message ? e.message : e), true); }
+}
+
+/* ==================================================== säkerhetskopia === */
+function kopiera() {
+  const blob = new Blob([JSON.stringify(P)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dagsformen-${(P.namn || "kopia").replace(/[^\w-]/g, "")}-${idag()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function aterstall(fil) {
+  try {
+    const s = JSON.parse(await fil.text());
+    const kalla = s.daily ? s : (s.profiler ? Object.values(s.profiler)[0] : null);
+    if (!kalla || typeof kalla.daily !== "object") throw new Error("filen är inte en Dagsformen-kopia");
+    slaIhopDaglig(Object.entries(kalla.daily).map(([datum, v]) => ({ datum, ...v })));
+    slaIhopPass(kalla.workouts || []);
+    slaIhopHr(kalla.hrPass || []);
+    if (kalla.profil && !Object.keys(P.profil).length) P.profil = kalla.profil;
+    if (kalla.mal && !Object.keys(P.mal).length) P.mal = kalla.mal;
+    spara(); rita();
+    visaStatus("Säkerhetskopian är inläst."); setTimeout(doljStatus, 4000);
+  } catch (e) { visaStatus("Kunde inte läsa kopian: " + e.message, true); }
+}
+
+/* ================================================= härledda värden === */
+const dagar = () => Object.keys(P.daily).sort();
+const sistaDatum = () => { const d = dagar(); return d.length ? d[d.length - 1] : (P.workouts.length ? P.workouts[P.workouts.length - 1].start.slice(0, 10) : null); };
+function varden(nyckel, franIso) {
+  return dagar().filter(d => !franIso || d >= franIso).map(d => P.daily[d][nyckel]).filter(v => v != null && isFinite(v));
+}
+function senasteDatumFor(nyckel) {
+  const d = dagar();
+  for (let i = d.length - 1; i >= 0; i--) if (P.daily[d[i]][nyckel] != null) return d[i];
+  return null;
+}
+function alder() {
+  const a = parseInt(P.profil.alder, 10);
+  return isFinite(a) && a >= 10 && a <= 100 ? a : null;
+}
+function maxpuls() {
+  const m = parseInt(P.profil.maxpuls, 10);
+  if (isFinite(m) && m >= 120 && m <= 220) return { v: m, kalla: "angiven" };
+  // Observerad maxpuls slår formeln när den är trovärdig.
+  const obs = Math.max(0, ...P.workouts.map(w => w.puls_max || 0), ...P.hrPass.flatMap(h => h.hr));
+  const a = alder();
+  const formel = a ? Math.round(208 - 0.7 * a) : null;
+  if (obs >= 140 && (!formel || obs > formel)) return { v: obs, kalla: "observerad" };
+  return formel ? { v: formel, kalla: "uppskattad" } : null;
+}
+// Uth–Sørensen-formeln: VO2max ≈ 15,3 × maxpuls / vilopuls.
+function vo2FranPuls(vilopuls) {
+  const mp = maxpuls();
+  if (!mp || !vilopuls) return null;
+  return Math.round(15.3 * (mp.v / vilopuls) * 10) / 10;
+}
+function vo2max() {
+  const matt = varden("vo2max", plusDagar(sistaDatum() || idag(), -120));
+  if (matt.length >= 1) return { v: Math.round(medel(matt.slice(-5)) * 10) / 10, uppskattad: false };
+  const sista = sistaDatum();
+  if (!sista) return null;
+  const rhr = median(varden("vilopuls", plusDagar(sista, -27)));
+  const v = vo2FranPuls(rhr);
+  return v ? { v, uppskattad: true } : null;
+}
+// Referensvärden för VO2max (ml/kg/min) per åldersgrupp — bandgränser som
+// ungefär motsvarar percentilerna 5, 20, 40, 60, 80 och 95.
+const NORM = {
+  man: { 20: [32, 37, 43, 50, 56], 30: [31, 35, 41, 47, 53], 40: [30, 34, 40, 45, 52], 50: [26, 31, 35, 42, 49], 60: [22, 26, 30, 35, 44], 70: [20, 24, 28, 32, 40] },
+  kvinna: { 20: [27, 31, 36, 41, 46], 30: [26, 30, 35, 40, 45], 40: [25, 28, 32, 36, 41], 50: [21, 24, 27, 31, 37], 60: [19, 22, 25, 28, 34], 70: [17, 20, 23, 26, 31] },
+};
+const NIVAER = ["Låg", "Under medel", "Medel", "God", "Mycket god", "Utmärkt"];
+const PERC = [5, 20, 40, 60, 80, 95];
+function konditionsniva() {
+  const v = vo2max();
+  if (!v) return null;
+  const a = alder(), kon = P.profil.kon;
+  const ut = { vo2: v.v, uppskattad: v.uppskattad, niva: null, percentil: null };
+  if (!a || !NORM[kon]) return ut;
+  const grupp = Math.min(70, Math.max(20, Math.floor(a / 10) * 10));
+  const g = NORM[kon][grupp];
+  let i = 0; while (i < g.length && v.v >= g[i]) i++;
+  ut.niva = NIVAER[i];
+  ut.aldersgrupp = `${grupp}–${grupp + 9} år`;
+  // Linjär interpolation inom bandet ger en läsbar percentil.
+  const lo = i === 0 ? 0 : PERC[i - 1], hi = PERC[i];
+  const lov = i === 0 ? g[0] * 0.7 : g[i - 1], hiv = i >= g.length ? g[g.length - 1] * 1.25 : g[i];
+  const andel = hiv > lov ? Math.min(1, Math.max(0, (v.v - lov) / (hiv - lov))) : 0.5;
+  ut.percentil = Math.round(lo + (hi - lo) * andel);
+  ut.bandIndex = i;
+  return ut;
+}
+function konditionsSerie() {
+  // Rullande VO2max-uppskattning per vecka, ur 14 dagars median-vilopuls.
+  const d = dagar();
+  if (!d.length) return [];
+  const ut = [];
+  for (let i = 0; i < d.length; i++) {
+    if (veckodag(d[i]) !== 6 && i !== d.length - 1) continue;
+    const fran = plusDagar(d[i], -13);
+    const rhr = median(dagar().filter(x => x >= fran && x <= d[i]).map(x => P.daily[x].vilopuls).filter(v => v != null));
+    const matt = dagar().filter(x => x >= fran && x <= d[i]).map(x => P.daily[x].vo2max).filter(v => v != null);
+    const v = matt.length ? medel(matt) : vo2FranPuls(rhr);
+    if (v) ut.push({ datum: d[i], v: Math.round(v * 10) / 10 });
+  }
+  return ut;
+}
+function passIVecka(startIso) {
+  const slut = plusDagar(startIso, 6);
+  return P.workouts.filter(w => { const d = w.start.slice(0, 10); return d >= startIso && d <= slut; });
+}
+function veckoData() {
+  const sista = sistaDatum();
+  if (!sista) return null;
+  const start = veckostart(sista), forra = plusDagar(start, -7);
+  const gangna = veckodag(sista) + 1;
+  const nu = passIVecka(start), fg = passIVecka(forra);
+  const tid = a => a.reduce((s, w) => s + (w.varaktighet_min || 0), 0);
+  const stegSnitt = (f, t) => medel(dagar().filter(d => d >= f && d <= t).map(d => P.daily[d].steg).filter(v => v != null));
+  // Exportdagen är nästan alltid halv, så den sista dagen skulle dra ner
+  // snittet. Räkna bara hela dagar när veckan har fler än en.
+  const stegTom = gangna >= 2 ? plusDagar(sista, -1) : sista;
+  return {
+    start, sista, gangna, veckonr: veckoNr(sista),
+    stegDagar: gangna >= 2 ? gangna - 1 : 1,
+    pass: nu.length, passFg: fg.length,
+    tid: Math.round(tid(nu)), tidFg: Math.round(tid(fg)),
+    steg: stegSnitt(start, stegTom), stegFg: stegSnitt(forra, plusDagar(forra, 6)),
+    prognosPass: gangna < 7 ? nu.length / gangna * 7 : null,
+    prognosTid: gangna < 7 ? tid(nu) / gangna * 7 : null,
+  };
+}
+function pulszoner() {
+  const mp = maxpuls();
+  if (!mp) return null;
+  const g = [0.7 * mp.v, 0.85 * mp.v];
+  const zon = [0, 0, 0];
+  let kalla = null;
+  const sista = sistaDatum(); if (!sista) return null;
+  const fran = plusDagar(sista, -27);
+  const medPuls = P.hrPass.filter(h => h.start.slice(0, 10) >= fran);
+  if (medPuls.length >= 3) {
+    kalla = "exakt";
+    for (const s of medPuls) for (const v of s.hr) zon[v < g[0] ? 0 : v < g[1] ? 1 : 2] += 1;
+  } else {
+    const p = P.workouts.filter(w => w.start.slice(0, 10) >= fran && w.puls_medel && w.varaktighet_min);
+    if (p.length < 3) return null;
+    kalla = "snitt";
+    for (const w of p) zon[w.puls_medel < g[0] ? 0 : w.puls_medel < g[1] ? 1 : 2] += w.varaktighet_min;
+  }
+  const tot = zon.reduce((a, b) => a + b, 0);
+  return tot > 0 ? { zon, tot, kalla, mp } : null;
+}
+
+/* =============================== vilka mätvärden har tillräcklig data === */
+// Kraven skiljer sig per mätvärde: en trend behöver fler punkter än ett
+// enstaka nyckeltal, och vikt behöver dessutom spänna över tid för att säga något.
+const KRAV = [
+  { nyckel: "steg", namn: "Steg per dag", min: 7, rad: "Bär telefonen eller klockan så räknas stegen automatiskt." },
+  { nyckel: "somn_timmar", namn: "Sömn", min: 7, rad: "Bär klockan på natten så mäts sömnen." },
+  { nyckel: "vilopuls", namn: "Vilopuls", min: 7, rad: "Bär klockan regelbundet, även i vila." },
+  { nyckel: "hrv_ms", namn: "Återhämtning (HRV)", min: 7, rad: "Bär klockan på natten så mäts variabiliteten." },
+  { nyckel: "vikt_kg", namn: "Vikt", min: 5, spann: 14, rad: "Väg dig några gånger över minst två veckor." },
+];
+function tillrackligt(k) {
+  const v = varden(k.nyckel);
+  if (v.length < k.min) return false;
+  if (k.spann) {
+    const f = senasteDatumFor(k.nyckel), forsta = dagar().find(d => P.daily[d][k.nyckel] != null);
+    if (!f || !forsta || dagarMellan(forsta, f) < k.spann) return false;
+  }
+  return true;
+}
+function saknasLista() {
+  const ut = [];
+  for (const k of KRAV) if (!tillrackligt(k)) {
+    const n = varden(k.nyckel).length;
+    ut.push(`${k.namn} — ${n} av ${k.min} mätningar. ${k.rad}`);
+  }
+  const sista = sistaDatum();
+  const lop = P.workouts.filter(w => /kör|löp|run/i.test(w.typ) && (w.distans_km || 0) >= 1);
+  if (lop.length < 4) ut.push(`Löptempo — ${lop.length} av 4 löppass. Registrera löpturer med klockan.`);
+  if (!pulszoner()) ut.push(maxpuls() ? "Pulszoner — för få pass med pulsmätning de senaste fyra veckorna." : "Pulszoner — fyll i din ålder under Profil så kan jag räkna ut dina zoner.");
+  if (!alder() || !P.profil.kon) ut.push("Jämförelse med din åldersgrupp — fyll i ålder och kön under Profil.");
+  return ut;
+}
+function dataAlder() {
+  const s = sistaDatum();
+  return s ? dagarMellan(s, idag()) : null;
+}
+
+/* ================================================== diagrammotor === */
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function svgEl(tag, at) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k, v] of Object.entries(at || {})) e.setAttribute(k, v); return e; }
+function finaSteg(max) {
+  if (max <= 0) return [0, 1];
+  const s10 = Math.pow(10, Math.floor(Math.log10(max))), n = max / s10;
+  const s = n <= 1.2 ? s10 / 4 : n <= 2.5 ? s10 / 2 : n <= 6 ? s10 : s10 * 2;
+  const t = []; for (let v = 0; v <= max + s * 0.01; v += s) t.push(Math.round(v * 100) / 100);
+  return t;
+}
+function ritaDiagram(box, cfg) {
+  box.textContent = "";
+  if (cfg.titel) { const h = document.createElement("h2"); h.textContent = cfg.titel; box.appendChild(h); }
+  if (cfg.under) { const p = document.createElement("p"); p.className = "sub"; p.textContent = cfg.under; box.appendChild(p); }
+  const pts = cfg.punkter;
+  if (!pts.length) return;
+  const W = Math.max(260, box.clientWidth - 32), H = cfg.hojd || 170;
+  const pL = 40, pR = 10, pT = 8, pB = 20, iw = W - pL - pR, ih = H - pT - pB;
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": cfg.titel || "" });
+  const alla = pts.flatMap(p => p.v).filter(v => v != null);
+  let lo = 0, hi = Math.max(...alla), steg;
+  if (cfg.nollbas === false) {
+    lo = Math.min(...alla); const pad = (hi - lo) * 0.18 || 1;
+    lo = Math.floor(lo - pad); hi = Math.ceil(hi + pad);
+    steg = [lo, Math.round((lo + hi) / 2), hi];
+  } else { steg = finaSteg(hi); hi = steg[steg.length - 1]; }
+  const yv = v => pT + ih - ((v - lo) / (hi - lo || 1)) * ih;
+  const xv = i => pL + (pts.length === 1 ? iw / 2 : i * (iw / (pts.length - 1)));
+  const bw = iw / pts.length;
+  for (const t of steg) {
+    const y = yv(t);
+    svg.appendChild(svgEl("line", { x1: pL, x2: W - pR, y1: y, y2: y, stroke: "var(--grid)", "stroke-width": 1 }));
+    const l = svgEl("text", { x: pL - 6, y: y + 3.5, "text-anchor": "end", class: "axis-text" });
+    l.textContent = cfg.yFmt ? cfg.yFmt(t) : fmtInt(t); svg.appendChild(l);
+  }
+  const var2 = Math.max(1, Math.ceil(pts.length / 5));
+  pts.forEach((p, i) => {
+    if (i % var2 !== 0 && i !== pts.length - 1) return;
+    const l = svgEl("text", { x: cfg.staplar ? pL + (i + 0.5) * bw : xv(i), y: H - 5, "text-anchor": "middle", class: "axis-text" });
+    l.textContent = p.x; svg.appendChild(l);
+  });
+  const farg = cfg.farg;
+  if (cfg.staplar) {
+    const b = Math.min(24, Math.max(3, bw - 3));
+    pts.forEach((p, i) => {
+      const v = p.v[0]; if (v == null) return;
+      const y = yv(v), h = Math.max(0, pT + ih - y), r = Math.min(4, b / 2, h), x = pL + (i + 0.5) * bw - b / 2;
+      svg.appendChild(svgEl("path", { d: `M${x},${pT + ih} V${y + r} Q${x},${y} ${x + r},${y} H${x + b - r} Q${x + b},${y} ${x + b},${y + r} V${pT + ih} Z`, fill: farg }));
+    });
+  } else {
+    let d = "", pa = false;
+    pts.forEach((p, i) => { const v = p.v[0]; if (v == null) { pa = false; return; } d += (pa ? "L" : "M") + xv(i).toFixed(1) + "," + yv(v).toFixed(1); pa = true; });
+    if (d) svg.appendChild(svgEl("path", { d, fill: "none", stroke: farg, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    const sistI = pts.length - 1;
+    if (pts[sistI].v[0] != null) svg.appendChild(svgEl("circle", { cx: xv(sistI), cy: yv(pts[sistI].v[0]), r: 4.5, fill: farg, stroke: "var(--surface)", "stroke-width": 2 }));
+  }
+  const kryss = svgEl("line", { y1: pT, y2: pT + ih, stroke: "var(--axis)", "stroke-width": 1, visibility: "hidden" });
+  svg.appendChild(kryss);
+  box.appendChild(svg);
+  const tip = document.createElement("div"); tip.className = "tip"; box.appendChild(tip);
+  function visa(i) {
+    const p = pts[i]; if (p.v[0] == null) return;
+    tip.textContent = "";
+    const d = document.createElement("div"); d.className = "d"; d.textContent = p.etikett || p.x; tip.appendChild(d);
+    const rad = document.createElement("div"); rad.className = "row";
+    const key = document.createElement("i"); key.style.background = farg;
+    const b = document.createElement("b"); b.textContent = cfg.tipFmt ? cfg.tipFmt(p.v[0]) : (cfg.yFmt ? cfg.yFmt(p.v[0]) : fmtInt(p.v[0]));
+    rad.append(key, b); tip.appendChild(rad);
+    const br = box.getBoundingClientRect(), sr = svg.getBoundingClientRect(), sx = sr.width / W;
+    const px = sr.left - br.left + (cfg.staplar ? pL + (i + 0.5) * bw : xv(i)) * sx;
+    tip.style.display = "block";
+    tip.style.left = Math.min(br.width - tip.offsetWidth - 6, Math.max(6, px - tip.offsetWidth / 2)) + "px";
+    tip.style.top = (sr.top - br.top + 4) + "px";
+    const cx = cfg.staplar ? pL + (i + 0.5) * bw : xv(i);
+    kryss.setAttribute("x1", cx); kryss.setAttribute("x2", cx); kryss.setAttribute("visibility", "visible");
+  }
+  svg.addEventListener("pointermove", ev => {
+    const sr = svg.getBoundingClientRect(), x = (ev.clientX - sr.left) / (sr.width / W);
+    let i = cfg.staplar ? Math.floor((x - pL) / bw) : Math.round((x - pL) / (iw / Math.max(1, pts.length - 1)));
+    visa(Math.max(0, Math.min(pts.length - 1, i)));
+  });
+  svg.addEventListener("pointerleave", () => { tip.style.display = "none"; kryss.setAttribute("visibility", "hidden"); });
+}
+
+/* ====================================================== rendering === */
+function rita() {
+  const har = harData();
+  $("empty").hidden = har; $("dash").hidden = !har; $("profilbar").hidden = !har;
+  ritaProfilVal();
+  if (!har) return;
+  ritaHero(); ritaVeckan(); ritaTrend(); ritaMer(); ritaSaknas(); ritaKontoLage();
+  fyllProfilFormular();
+  $("importLog").textContent = P.imports.length ? "Senaste import: " + P.imports[P.imports.length - 1].datum : "";
+}
+function ritaProfilVal() {
+  const sel = $("profilVal"); sel.textContent = "";
+  for (const [id, p] of Object.entries(store.profiler)) {
+    const o = document.createElement("option"); o.value = id; o.textContent = p.namn || "Profil";
+    if (id === store.aktiv) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+function ritaHero() {
+  const box = $("hero"); box.textContent = "";
+  const k = konditionsniva();
+  const et = document.createElement("div"); et.className = "etikett"; et.textContent = "Din konditionsnivå";
+  box.appendChild(et);
+
+  if (!k) {
+    const n = document.createElement("div"); n.className = "niva"; n.style.fontSize = "24px"; n.textContent = "Kan inte bedömas ännu";
+    const j = document.createElement("p"); j.className = "jamfor";
+    j.textContent = "Jag behöver din vilopuls från minst någon vecka — bär klockan regelbundet, även i vila.";
+    box.append(n, j); return;
+  }
+  if (!k.niva) {
+    const n = document.createElement("div"); n.className = "niva"; n.style.fontSize = "26px"; n.textContent = "Nästan där";
+    const j = document.createElement("p"); j.className = "jamfor";
+    j.textContent = "Fyll i din ålder och kön under Profil så visar jag var du ligger jämfört med andra.";
+    const b = document.createElement("button"); b.className = "primary"; b.style.marginTop = "12px"; b.textContent = "Fyll i profil";
+    b.addEventListener("click", () => { $("installningar").open = true; $("installningar").scrollIntoView({ behavior: "smooth" }); $("pAlder").focus(); });
+    box.append(n, j, b);
+    return;
+  }
+  const n = document.createElement("div"); n.className = "niva"; n.textContent = k.niva;
+  const j = document.createElement("p"); j.className = "jamfor";
+  j.textContent = `Bättre kondition än ungefär ${k.percentil} % av andra ${P.profil.kon === "man" ? "män" : "kvinnor"} ${k.aldersgrupp}.`;
+  box.append(n, j);
+
+  const skala = document.createElement("div"); skala.className = "skala";
+  for (let i = 0; i < 6; i++) { const s = document.createElement("i"); if (i <= k.bandIndex) s.className = "pa"; skala.appendChild(s); }
+  const txt = document.createElement("div"); txt.className = "skala-txt";
+  const a = document.createElement("span"); a.textContent = "Låg";
+  const b = document.createElement("span"); b.textContent = "Utmärkt";
+  txt.append(a, b);
+  box.append(skala, txt);
+
+  const serie = konditionsSerie();
+  if (serie.length >= 3) {
+    const forr = serie[Math.max(0, serie.length - 5)].v, nu = serie[serie.length - 1].v;
+    const d = nu - forr;
+    const r = document.createElement("div");
+    r.className = "rikt " + (d > 0.7 ? "upp" : d < -0.7 ? "ner" : "");
+    r.textContent = d > 0.7 ? "▲ Din kondition förbättras" : d < -0.7 ? "▼ Din kondition har sjunkit något" : "→ Stabil nivå";
+    box.appendChild(r);
+  }
+  const v = document.createElement("p"); v.className = "vo2";
+  v.textContent = k.uppskattad
+    ? `Estimerat VO2max ${fmt1(k.vo2)} — uträknat från din vilopuls och ålder`
+    : `VO2max ${fmt1(k.vo2)} — mätt av din klocka`;
+  box.appendChild(v);
+
+  const alderD = dataAlder();
+  if (alderD != null && alderD > 3) {
+    const f = document.createElement("p"); f.className = "vo2";
+    f.textContent = `Senaste mätning: ${alderD} dagar sedan. Importera en ny export för en färsk bild.`;
+    box.appendChild(f);
+  }
+}
+function veckoPost(label, varde, enhet, meta, malAndel) {
+  const d = document.createElement("div"); d.className = "vecka-post";
+  const l = document.createElement("div"); l.className = "label"; l.textContent = label;
+  const v = document.createElement("div"); v.className = "value"; v.textContent = varde;
+  if (enhet) { const s = document.createElement("small"); s.textContent = " " + enhet; v.appendChild(s); }
+  d.append(l, v);
+  if (meta) { const m = document.createElement("div"); m.className = "meta"; m.append(...meta); d.appendChild(m); }
+  if (malAndel != null) {
+    const b = document.createElement("div"); b.className = "malbar";
+    const i = document.createElement("i"); i.style.width = Math.min(100, malAndel * 100) + "%";
+    if (malAndel >= 1) i.className = "klar";
+    b.appendChild(i); d.appendChild(b);
+  }
+  return d;
+}
+function jmfMeta(nu, fg, enhet) {
+  const ut = [];
+  if (fg > 0) {
+    const d = nu - fg;
+    const b = document.createElement("b");
+    b.textContent = (d > 0 ? "▲ " : d < 0 ? "▼ " : "→ ") + fmtInt(Math.abs(d)) + (enhet ? " " + enhet : "");
+    b.style.color = d > 0 ? "var(--good)" : d < 0 ? "var(--bad)" : "var(--muted)";
+    ut.push(b, document.createTextNode(" mot förra veckan"));
+  } else ut.push(document.createTextNode("Inget att jämföra med förra veckan"));
+  return ut;
+}
+function ritaVeckan() {
+  const box = $("veckan"); box.textContent = "";
+  const v = veckoData(); if (!v) return;
+  const h = document.createElement("h2"); h.textContent = `Vecka ${v.veckonr}`;
+  const s = document.createElement("p"); s.className = "sub";
+  s.textContent = v.gangna < 7
+    ? `${v.gangna} av 7 dagar gjorda — siffrorna växer resten av veckan, så jag visar även prognosen.`
+    : "Hela veckan sammanräknad.";
+  box.append(h, s);
+  const g = document.createElement("div"); g.className = "vecka-grid";
+
+  const passMeta = jmfMeta(v.pass, v.passFg, "");
+  if (v.prognosPass != null && v.passFg > 0) {
+    passMeta.push(document.createElement("br"));
+    const b = document.createElement("b"); b.textContent = `Prognos ${fmt1(v.prognosPass)}`;
+    passMeta.push(b, document.createTextNode(" pass hela veckan"));
+  }
+  g.appendChild(veckoPost("Träningspass", fmtInt(v.pass), "", passMeta,
+    P.mal.pass ? v.pass / P.mal.pass : null));
+
+  const tidMeta = jmfMeta(v.tid, v.tidFg, "min");
+  if (v.prognosTid != null && v.tidFg > 0) {
+    tidMeta.push(document.createElement("br"));
+    const b = document.createElement("b"); b.textContent = `Prognos ${fmtInt(v.prognosTid)}`;
+    tidMeta.push(b, document.createTextNode(" min hela veckan"));
+  }
+  g.appendChild(veckoPost("Träningstid", fmtInt(v.tid), "min", tidMeta,
+    P.mal.tid ? v.tid / P.mal.tid : null));
+
+  if (v.steg != null) {
+    const stegMeta = v.stegFg != null ? jmfMeta(Math.round(v.steg), Math.round(v.stegFg), "") : [];
+    if (v.gangna >= 2) {
+      stegMeta.push(document.createElement("br"), document.createTextNode(`Snitt över ${v.stegDagar} hela ${v.stegDagar === 1 ? "dag" : "dagar"}`));
+    }
+    g.appendChild(veckoPost("Steg per dag", fmtInt(v.steg), "", stegMeta, P.mal.steg ? v.steg / P.mal.steg : null));
+  }
+  box.appendChild(g);
+  if (P.mal.pass || P.mal.tid || P.mal.steg) {
+    const m = document.createElement("p"); m.className = "sub"; m.style.margin = "10px 0 0";
+    m.textContent = "Staplarna visar hur långt du kommit mot dina mål.";
+    box.appendChild(m);
+  }
+}
+function ritaTrend() {
+  const box = $("trend");
+  const serie = konditionsSerie();
+  if (serie.length < 3) { box.hidden = true; return; }
+  box.hidden = false;
+  ritaDiagram(box, {
+    titel: "Ditt VO2max över tid",
+    under: "Estimerat VO2max — högre betyder bättre kondition",
+    punkter: serie.map(p => ({ x: fmtDatum(p.datum), etikett: p.datum, v: [p.v] })),
+    farg: cssVar("--blue"), nollbas: false,
+    yFmt: v => fmt1(v), tipFmt: v => "VO2max " + fmt1(v),
+  });
+}
+function kort(titel, under) {
+  const c = document.createElement("div"); c.className = "card chart";
+  if (titel) { const h = document.createElement("h2"); h.textContent = titel; c.appendChild(h); }
+  if (under) { const p = document.createElement("p"); p.className = "sub"; p.textContent = under; c.appendChild(p); }
+  return c;
+}
+function ritaMer() {
+  const box = $("merInnehall"); box.textContent = "";
+  const bla = cssVar("--blue"), oran = cssVar("--orange");
+
+  const z = pulszoner();
+  if (z) {
+    const c = kort("Så hård är din träning", `Fördelning av träningstiden senaste fyra veckorna${z.kalla === "snitt" ? " (från snittpuls per pass)" : ""}. Maxpuls ${z.mp.v} (${z.mp.kalla}).`);
+    const bar = document.createElement("div"); bar.className = "zonbar";
+    const namn = ["Lätt", "Medel", "Hård"], farger = [cssVar("--zon1"), cssVar("--zon2"), cssVar("--zon3")];
+    z.zon.forEach((v, i) => { if (v <= 0) return; const s = document.createElement("i"); s.style.background = farger[i]; s.style.width = (v / z.tot * 100) + "%"; bar.appendChild(s); });
+    c.appendChild(bar);
+    const lista = document.createElement("div"); lista.className = "zonlista";
+    z.zon.forEach((v, i) => {
+      const r = document.createElement("div"); r.className = "z";
+      const sw = document.createElement("i"); sw.style.background = farger[i];
+      const n = document.createElement("span"); n.textContent = namn[i];
+      const b = document.createElement("b"); b.textContent = `${fmtInt(v)} min · ${Math.round(v / z.tot * 100)} %`;
+      r.append(sw, n, b); lista.appendChild(r);
+    });
+    c.appendChild(lista);
+    box.appendChild(c);
+  }
+
+  const d = dagar();
+  const graf = (krav, titel, under, farg, opts) => {
+    if (!tillrackligt(krav)) return;
+    const rader = d.filter(x => P.daily[x][krav.nyckel] != null);
+    const c = kort();
+    box.appendChild(c);
+    ritaDiagram(c, Object.assign({
+      titel, under, farg,
+      punkter: rader.map(x => ({ x: fmtDatum(x), etikett: x, v: [P.daily[x][krav.nyckel]] })),
+    }, opts || {}));
+  };
+  const k = n => KRAV.find(x => x.nyckel === n);
+  graf(k("steg"), "Steg per dag", "Din vardagsaktivitet", cssVar("--blue-svag"), { staplar: true, yFmt: v => v >= 1000 ? v / 1000 + "k" : String(v) });
+  graf(k("vilopuls"), "Vilopuls", "Slag per minut i vila — sjunker oftast när konditionen förbättras", bla, { nollbas: false });
+  graf(k("hrv_ms"), "Återhämtning (HRV)", "Högre värde brukar betyda att kroppen är utvilad", bla, { nollbas: false });
+  graf(k("somn_timmar"), "Sömn", "Timmar faktisk sömn de nätter som mätts", bla, { staplar: true, yFmt: v => v + " h", tipFmt: v => fmt1(v) + " h" });
+  graf(k("vikt_kg"), "Vikt", "Kilo", bla, { nollbas: false, yFmt: v => fmt1(v), tipFmt: v => fmt1(v) + " kg" });
+
+  const lop = P.workouts.filter(w => /kör|löp|run/i.test(w.typ) && (w.distans_km || 0) >= 1 && w.varaktighet_min > 0);
+  if (lop.length >= 4) {
+    const c = kort(); box.appendChild(c);
+    ritaDiagram(c, {
+      titel: "Löptempo", under: "Minuter per kilometer — lägre är snabbare",
+      punkter: lop.map(w => ({ x: fmtDatum(w.start.slice(0, 10)), etikett: `${w.start.slice(0, 10)} · ${fmt1(w.distans_km)} km`, v: [w.varaktighet_min / w.distans_km] })),
+      farg: oran, nollbas: false, yFmt: fmtPace, tipFmt: v => fmtPace(v) + " min/km",
+    });
+  }
+
+  if (P.workouts.length) {
+    const c = kort("Senaste passen", `${P.workouts.length} pass i din historik`);
+    const wrap = document.createElement("div"); wrap.className = "tablewrap";
+    const tbl = document.createElement("table"); tbl.className = "pass";
+    const thead = document.createElement("thead"), hr = document.createElement("tr");
+    for (const h of ["Datum", "Typ", "Tid", "Distans", "Puls"]) { const th = document.createElement("th"); th.textContent = h; hr.appendChild(th); }
+    thead.appendChild(hr); tbl.appendChild(thead);
+    const tb = document.createElement("tbody");
+    for (const w of P.workouts.slice(-8).reverse()) {
+      const tr = document.createElement("tr");
+      for (const c2 of [w.start.slice(0, 10), w.typ, w.varaktighet_min ? fmtInt(w.varaktighet_min) + " min" : "–",
+        w.distans_km ? fmt1(w.distans_km) + " km" : "–", w.puls_medel ? fmtInt(w.puls_medel) : "–"]) {
+        const td = document.createElement("td"); td.textContent = c2; tr.appendChild(td);
+      }
+      tb.appendChild(tr);
+    }
+    tbl.appendChild(tb); wrap.appendChild(tbl); c.appendChild(wrap); box.appendChild(c);
+  }
+}
+function ritaSaknas() {
+  const lista = saknasLista();
+  $("saknasCard").hidden = !lista.length;
+  const ul = $("saknasLista"); ul.textContent = "";
+  for (const t of lista) { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); }
+}
+
+/* ========================================================= coachen === */
+function coachData() {
+  const sista = sistaDatum();
+  const k = konditionsniva(), v = veckoData(), z = pulszoner();
+  const snitt = (nyckel, dgr) => { const x = medel(varden(nyckel, plusDagar(sista, -dgr + 1))); return x == null ? null : Math.round(x * 10) / 10; };
+  const tillr = n => { const kk = KRAV.find(x => x.nyckel === n); return kk ? tillrackligt(kk) : true; };
+  const veckor = {};
+  for (const w of P.workouts) { const s = veckostart(w.start.slice(0, 10)); veckor[s] = Math.round(((veckor[s] || 0) + (w.varaktighet_min || 0))); }
+  const senasteVeckor = Object.fromEntries(Object.entries(veckor).sort().slice(-8));
+  const typer = {};
+  for (const w of P.workouts.filter(w => w.start.slice(0, 10) >= plusDagar(sista, -27))) typer[w.typ] = (typer[w.typ] || 0) + 1;
+  return {
+    profil: { alder: alder(), kon: P.profil.kon || null, maxpuls: maxpuls() ? maxpuls().v : null },
+    mal: P.mal,
+    datans_alder_dagar: dataAlder(),
+    kondition: k ? { niva: k.niva, percentil_i_aldersgrupp: k.percentil, vo2max: k.vo2, vo2max_estimerat: k.uppskattad } : null,
+    denna_vecka: v ? { veckonr: v.veckonr, dagar_gangna: v.gangna, pass: v.pass, traningstid_min: v.tid, prognos_pass_hela_veckan: v.prognosPass ? Math.round(v.prognosPass * 10) / 10 : null, prognos_tid_hela_veckan: v.prognosTid ? Math.round(v.prognosTid) : null } : null,
+    forra_veckan: v ? { pass: v.passFg, traningstid_min: v.tidFg } : null,
+    traningstid_min_per_vecka: senasteVeckor,
+    passtyper_senaste_4_veckorna: typer,
+    intensitet_senaste_4_veckorna: z ? { latt_min: Math.round(z.zon[0]), medel_min: Math.round(z.zon[1]), hard_min: Math.round(z.zon[2]) } : null,
+    // Mätvärden med för tunt underlag utelämnas helt och listas i "saknas".
+    snitt_senaste_28_dagarna: {
+      steg: tillr("steg") ? snitt("steg", 28) : null,
+      vilopuls: tillr("vilopuls") ? snitt("vilopuls", 28) : null,
+      hrv_ms: tillr("hrv_ms") ? snitt("hrv_ms", 28) : null,
+      somn_timmar: tillr("somn_timmar") ? snitt("somn_timmar", 28) : null,
+      vikt_kg: tillr("vikt_kg") ? snitt("vikt_kg", 28) : null,
+    },
+    saknar_data_for: saknasLista(),
+  };
+}
+function coachRegler() {
+  return `Du är coachen i appen Dagsformen — en erfaren, personlig hälso- och träningscoach. Du pratar direkt med din adept på svenska.
+
+TON: Balanserad — uppmuntrande men ärlig. Beröm det som fungerar, säg ifrån när något ser illa ut. Adepten kan vara nybörjare: förklara kort vad mätvärden betyder första gången du nämner dem (t.ex. "HRV, ett mått på hur återhämtad kroppen är"). Undvik jargong.
+
+VIKTIGT OM DATAN:
+- Referera till konkreta siffror ur datan nedan.
+- Mätvärden som står som null saknar tillräckligt underlag. Dra ALDRIG slutsatser om dem. Du får däremot uppmuntra adepten att börja mäta dem — listan "saknar_data_for" säger vad som fattas och varför.
+- Är "dagar_gangna" mindre än 7 är veckan inte slut: jämför mot prognosen, inte mot råsiffran, och säg det.
+- Adepten kan träna vad som helst — löpning, styrka, cykling, promenader. Anta inte att det handlar om löpning.
+- Du får även svara på allmänna träningsfrågor som datan inte täcker (upplägg, återhämtning, teknik). Ge inga medicinska diagnoser; vid tydliga varningssignaler, rekommendera att söka vård.
+
+ADEPTENS DATA (JSON):
+${JSON.stringify(coachData())}`;
+}
+function tipsPrompt() {
+  return `Ge mig min bedömning nu. Svara med exakt denna struktur:
+
+## Så ligger du till
+2–3 meningar om helheten: konditionsnivån, vad som är på väg åt rätt håll och vad som oroar.
+
+## Dina tips
+3–5 numrerade råd för de kommande fyra veckorna. Varje råd ska vara konkret och gå att göra i morgon (t.ex. "lägg till ett lugnt 30-minuterspass i veckan" — inte "träna mer"). Anpassa efter mina siffror och mina mål.
+
+Max 350 ord totalt.`;
+}
+
+function markdownTill(el, text) {
+  el.textContent = "";
+  let ul = null, ol = null;
+  const inline = (p, s) => {
+    s.split(/\*\*(.+?)\*\*/g).forEach((d, i) => {
+      if (i % 2) { const b = document.createElement("strong"); b.textContent = d; p.appendChild(b); }
+      else if (d) p.appendChild(document.createTextNode(d));
+    });
+  };
+  for (const rå of text.split("\n")) {
+    const rad = rå.trim();
+    const uL = /^[-*•] /.test(rad), oL = /^\d+[.)] /.test(rad);
+    if (!uL) ul = null;
+    if (!oL) ol = null;
+    if (!rad) continue;
+    if (/^#{1,3} /.test(rad)) { const h = document.createElement("h3"); inline(h, rad.replace(/^#+ /, "")); el.appendChild(h); }
+    else if (uL) { if (!ul) { ul = document.createElement("ul"); el.appendChild(ul); } const li = document.createElement("li"); inline(li, rad.replace(/^[-*•] /, "")); ul.appendChild(li); }
+    else if (oL) { if (!ol) { ol = document.createElement("ol"); el.appendChild(ol); } const li = document.createElement("li"); inline(li, rad.replace(/^\d+[.)] /, "")); ol.appendChild(li); }
+    else { const p = document.createElement("p"); inline(p, rad); el.appendChild(p); }
+  }
+}
+function ritaChat() {
+  const box = $("chat"); box.textContent = "";
+  for (const m of P.chat) {
+    if (m.role === "user") { const d = document.createElement("div"); d.className = "msg-user"; d.textContent = m.content; box.appendChild(d); }
+    else { const d = document.createElement("div"); d.className = "msg-coach";
+      const w = document.createElement("div"); w.className = "who"; w.textContent = "Coachen";
+      const b = document.createElement("div"); markdownTill(b, m.content);
+      d.append(w, b); box.appendChild(d); }
+  }
+}
+
+let ctl = null;
+let konto = null;   // {epost, svarKvar, coachPausad} när någon är inloggad
+
+/* ----------------------------------------------------------- konto --- */
+async function hamtaKonto() {
+  try {
+    const r = await fetch("/api/mig", { headers: { Accept: "application/json" } });
+    const d = await r.json();
+    konto = d && d.epost ? d : null;
+  } catch (e) { konto = null; }
+  ritaKontoLage();
+  return konto;
+}
+function coachRuta(text) {
+  $("tipsStart").hidden = true;
+  $("chatForm").hidden = true;
+  const p = document.createElement("p"); p.className = "sub"; p.textContent = text;
+  $("tips").textContent = ""; $("tips").appendChild(p);
+}
+function ritaKontoLage() {
+  const inne = !!konto;
+  $("kontobar").hidden = !inne;
+  if (inne) $("kontoEpost").textContent = konto.epost;
+  // Kontokortet visas först när det finns data att coacha på.
+  $("kontoKort").hidden = inne || !harData();
+  $("coachCard").hidden = !inne;
+  if (!inne) return;
+  if (konto.coachPausad) {
+    coachRuta("Coachen är pausad resten av månaden eftersom appens kostnadstak är nått. Din konditionsnivå, veckan och alla grafer fungerar som vanligt.");
+  } else if (konto.svarKvar <= 0) {
+    coachRuta("Du har använt månadens coach-svar. Kvoten återställs den 1:a — allt annat i appen fungerar.");
+  } else if (P.tips) {
+    markdownTill($("tips"), P.tips);
+    $("tipsStart").hidden = true;
+    $("chatForm").hidden = false;
+  } else {
+    $("tips").textContent = "";
+    $("tipsStart").hidden = false;
+    $("chatForm").hidden = true;
+  }
+}
+let registrerar = true;
+function sattKontoLage(reg) {
+  registrerar = reg;
+  $("kontoRubrik").textContent = reg ? "Skapa konto för coachen" : "Logga in";
+  $("kSkicka").textContent = reg ? "Skapa konto" : "Logga in";
+  $("kVaxla").textContent = reg ? "Jag har redan ett konto" : "Skapa nytt konto";
+  $("kLosen").setAttribute("autocomplete", reg ? "new-password" : "current-password");
+  visaKontoFel("");
+}
+function visaKontoFel(text) {
+  const el = $("kFel");
+  el.hidden = !text;
+  el.textContent = text || "";
+}
+async function skickaKonto(e) {
+  e.preventDefault();
+  const knapp = $("kSkicka");
+  if (knapp.disabled) return;
+  visaKontoFel("");
+  knapp.disabled = true;
+  try {
+    const r = await fetch(registrerar ? "/api/registrera" : "/api/logga-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ epost: $("kEpost").value.trim(), losenord: $("kLosen").value }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { visaKontoFel(d.fel || "Något gick fel. Prova igen."); return; }
+    $("kLosen").value = "";
+    await hamtaKonto();
+  } catch (fel) {
+    visaKontoFel("Kunde inte nå servern. Kontrollera din uppkoppling.");
+  } finally { knapp.disabled = false; }
+}
+
+/* ----------------------------------------------------------- coach --- */
+async function fragaCoach(fraga, tillTips) {
+  if (!konto) { $("kontoKort").hidden = false; $("kEpost").focus(); return; }
+  const stop = $("btnStop"), send = $("btnSend"), start = $("btnTips");
+  let mal;
+  if (tillTips) { mal = $("tips"); mal.textContent = "Tänker … det kan ta upp till en minut."; }
+  else {
+    P.chat.push({ role: "user", content: fraga }); ritaChat();
+    const d = document.createElement("div"); d.className = "msg-coach";
+    const w = document.createElement("div"); w.className = "who"; w.textContent = "Coachen";
+    mal = document.createElement("div"); mal.textContent = "Tänker …";
+    d.append(w, mal); $("chat").appendChild(d);
+    d.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  send.disabled = true; start.disabled = true; stop.hidden = false;
+  ctl = new AbortController();
+  const historik = tillTips ? [] : P.chat.filter(m => !m.dolj && m.content).slice(-10)
+    .map(m => ({ role: m.role, content: m.content }));
+  try {
+    const svar = await fetch("/api/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fraga, historik, data: coachData() }),
+      signal: ctl.signal,
+    });
+    if (!svar.ok) {
+      const d = await svar.json().catch(() => ({}));
+      if (svar.status === 401) { konto = null; ritaKontoLage(); $("kontoKort").hidden = false; return; }
+      coachRuta(d.fel || "Coachen kunde inte svara just nu. Prova igen.");
+      await hamtaKonto();
+      return;
+    }
+    const lasare = svar.body.getReader();
+    const avkodare = new TextDecoder();
+    let text = "";
+    for (;;) {
+      const { done, value } = await lasare.read();
+      if (done) break;
+      text += avkodare.decode(value, { stream: true });
+      markdownTill(mal, text);
+    }
+    text += avkodare.decode();
+    markdownTill(mal, text);
+    if (tillTips) {
+      P.tips = text;
+      P.chat = [];
+      $("tipsStart").hidden = true;
+    } else {
+      P.chat.push({ role: "assistant", content: text });
+      ritaChat();
+    }
+    if (P.chat.length > 12) P.chat = P.chat.slice(-12);
+    $("chatForm").hidden = false;
+    spara();
+    if (konto) konto.svarKvar = Math.max(0, konto.svarKvar - 1);
+  } catch (fel) {
+    if (fel && fel.name === "AbortError") mal.textContent = "(Avbrutet.)";
+    else mal.textContent = "Coachen kunde inte nås. Kontrollera din uppkoppling och prova igen.";
+  } finally { send.disabled = false; start.disabled = false; stop.hidden = true; ctl = null; }
+}
+
+/* ========================================================== profil === */
+function fyllProfilFormular() {
+  $("pNamn").value = P.namn || "";
+  $("pAlder").value = P.profil.alder || "";
+  $("pKon").value = P.profil.kon || "";
+  $("pLangd").value = P.profil.langd || "";
+  $("pMaxpuls").value = P.profil.maxpuls || "";
+  $("mPass").value = P.mal.pass || "";
+  $("mTid").value = P.mal.tid || "";
+  $("mSteg").value = P.mal.steg || "";
+}
+function sparaProfil() {
+  const num = id => { const v = parseInt($(id).value, 10); return isFinite(v) ? v : undefined; };
+  P.namn = $("pNamn").value.trim() || "Jag";
+  P.profil = { alder: num("pAlder"), kon: $("pKon").value || undefined, langd: num("pLangd"), maxpuls: num("pMaxpuls") };
+  P.mal = { pass: num("mPass"), tid: num("mTid"), steg: num("mSteg") };
+  spara(); rita();
+  $("sparatKvitto").textContent = "Sparat!";
+  setTimeout(() => { $("sparatKvitto").textContent = ""; }, 2500);
+}
+
+/* ============================================================ init === */
+function koppla() {
+  const valj = () => $("fileZip").click();
+  $("drop").addEventListener("click", valj);
+  $("drop").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); valj(); } });
+  $("btnImport").addEventListener("click", valj);
+  $("fileZip").addEventListener("change", e => { taEmotFil(e.target.files[0]); e.target.value = ""; });
+  $("btnRestore").addEventListener("click", () => $("fileJson").click());
+  $("fileJson").addEventListener("change", e => { taEmotFil(e.target.files[0]); e.target.value = ""; });
+  $("btnBackup").addEventListener("click", kopiera);
+  $("btnSpara").addEventListener("click", sparaProfil);
+  $("btnTips").addEventListener("click", () => fragaCoach(tipsPrompt(), true));
+  $("btnStop").addEventListener("click", () => ctl && ctl.abort());
+  $("chatForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const b = $("chatBox"), q = b.value.trim();
+    if (!q || $("btnSend").disabled) return;
+    b.value = ""; fragaCoach(q, false);
+  });
+  $("profilVal").addEventListener("change", e => {
+    store.aktiv = e.target.value; P = store.profiler[store.aktiv];
+    for (const k of ["hrPass", "chat", "imports", "workouts"]) if (!Array.isArray(P[k])) P[k] = [];
+    if (!P.profil) P.profil = {}; if (!P.mal) P.mal = {};
+    spara();
+    $("tips").textContent = ""; $("tipsStart").hidden = false; $("chatForm").hidden = true;
+    if (P.tips) { markdownTill($("tips"), P.tips); $("tipsStart").hidden = true; $("chatForm").hidden = false; }
+    ritaChat(); rita();
+  });
+  $("btnNyProfil").addEventListener("click", () => {
+    const namn = prompt("Namn på den nya profilen:");
+    if (namn === null) return;
+    const id = "p" + Date.now();
+    store.profiler[id] = tomProfil();
+    store.profiler[id].namn = namn.trim() || "Ny profil";
+    store.aktiv = id; P = store.profiler[id];
+    spara();
+    $("tips").textContent = ""; $("tipsStart").hidden = false; $("chatForm").hidden = true;
+    ritaChat(); rita();
+  });
+  $("btnClear").addEventListener("click", () => {
+    if (!confirm(`Radera profilen "${P.namn}" och all dess data från den här webbläsaren?`)) return;
+    delete store.profiler[store.aktiv];
+    if (!Object.keys(store.profiler).length) { const id = "p" + Date.now(); store.profiler[id] = tomProfil(); store.aktiv = id; }
+    else store.aktiv = Object.keys(store.profiler)[0];
+    P = store.profiler[store.aktiv];
+    spara();
+    $("tips").textContent = ""; $("tipsStart").hidden = false; $("chatForm").hidden = true;
+    ritaChat(); rita();
+  });
+  for (const ev of ["dragover", "dragenter"]) document.addEventListener(ev, e => { e.preventDefault(); const d = $("drop"); if (d) d.classList.add("over"); });
+  for (const ev of ["dragleave", "drop"]) document.addEventListener(ev, e => { e.preventDefault(); const d = $("drop"); if (d) d.classList.remove("over"); });
+  document.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) taEmotFil(f); });
+  let rt = null;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (harData()) { ritaTrend(); ritaMer(); } }, 200); });
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", () => { if (harData()) rita(); });
+  $("merDetaljer").addEventListener("toggle", () => { if ($("merDetaljer").open) ritaMer(); });
+  $("kontoForm").addEventListener("submit", skickaKonto);
+  $("kVaxla").addEventListener("click", () => sattKontoLage(!registrerar));
+  $("btnLoggaUt").addEventListener("click", async () => {
+    await fetch("/api/logga-ut", { method: "POST" }).catch(() => {});
+    konto = null;
+    // Den som loggat ut har redan ett konto — visa inloggning, inte registrering.
+    sattKontoLage(false);
+    $("kEpost").value = ""; $("kLosen").value = "";
+    ritaKontoLage();
+  });
+}
+
+laddaStore();
+koppla();
+rita();
+ritaChat();
+hamtaKonto();
+</script>

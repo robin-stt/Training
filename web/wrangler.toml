@@ -1,0 +1,23 @@
+name = "dagsformen"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Frontend ligger i public/ och serveras direkt av Cloudflare.
+# Allt under /api/ går till workern.
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dagsformen"
+# Fylls i av "wrangler d1 create dagsformen" — se README.
+database_id = "FYLL_I_HAR"
+
+[vars]
+# Ungefär 200 kr. När månadens uppskattade kostnad passerar taket pausas
+# coachen till nästa månad; resten av appen fortsätter fungera.
+MANADSTAK_USD = "19"
+# Hur många coach-svar varje användare får per månad.
+SVAR_PER_ANVANDARE = "15"
