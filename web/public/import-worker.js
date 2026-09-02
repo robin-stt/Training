@@ -123,12 +123,19 @@ const PASSNAMN = { Running: "Löpning", Walking: "Promenad", Cycling: "Cykling",
 // "2026-06-01 23:30:00 +0300" → ms. Både mellanslaget före tiden och det före
 // tidszonen måste bort för att Date.parse ska godta strängen.
 function hkDatum(s) { return Date.parse(String(s || "").replace(" ", "T").replace(/\s+(?=[+-]\d{2}:?\d{2}$)/, "")); }
+// Posttyper importen faktiskt använder. Allt annat sållas bort direkt.
+const INTRESSANTA = /HKQuantityTypeIdentifier(?:StepCount|DistanceWalkingRunning|ActiveEnergyBurned|AppleExerciseTime|RestingHeartRate|HeartRateVariabilitySDNN|VO2Max|BodyMass)|HKCategoryTypeIdentifierSleepAnalysis/;
+
 function attr(tag) { const o = {}; const re = /([\w:]+)="([^"]*)"/g; let m; while ((m = re.exec(tag))) o[m[1]] = m[2]; return o; }
 
 function xmlAggregator() {
   const sum = {}, snitt = {}, sist = {}, somn = {}, djup = {}, pass = [];
   let nu = null;
   function post(tag) {
+    // Billig förprövning först: en Apple-export innehåller miljontals poster
+    // av typer vi inte använder, och att plocka isär var och en av dem åt både
+    // tid och minne. Ett enda test sållar bort dem innan attr() körs.
+    if (!INTRESSANTA.test(tag)) return;
     const a = attr(tag), t = a.type; if (!t) return;
     const dag = (a.startDate || "").slice(0, 10); if (!dag) return;
     const v = parseFloat(a.value);
@@ -216,13 +223,13 @@ async function importeraZip(fil) {
   const hr = [];
   let felIStrom = null;
 
-  function skannaXml(text, sista) {
-    let t = svans + text;
-    if (!sista) {
-      const c = t.lastIndexOf(">");
-      if (c < 0) { svans = t; return; }
-      svans = t.slice(c + 1); t = t.slice(0, c + 1);
-    } else svans = "";
+  // Uppackningen kan lämna hela filen i ett enda anrop — 25 MB blev 50 MB som
+  // JS-sträng, plus en kopia vid hopfogningen. På en telefon räckte det för att
+  // webbläsaren skulle döda fliken. Därför avkodas och genomsöks bytena i små
+  // bitar, så ingen stor sträng någonsin existerar.
+  const BIT = 512 * 1024;
+
+  function sokIgenom(t) {
     const re = /<(Record|Workout|WorkoutStatistics|\/Workout)\b[^>]*>/g;
     let m;
     while ((m = re.exec(t))) {
@@ -230,6 +237,22 @@ async function importeraZip(fil) {
       else if (m[1] === "Workout") agg.passStart(m[0]);
       else if (m[1] === "WorkoutStatistics") agg.passStat(m[0]);
       else agg.passSlut();
+    }
+  }
+
+  function skannaXml(data, sista) {
+    for (let i = 0; i < data.length; i += BIT) {
+      const slut = Math.min(i + BIT, data.length);
+      const sistaBiten = sista && slut >= data.length;
+      let t = svans + dec.decode(data.subarray(i, slut), { stream: !sistaBiten });
+      if (!sistaBiten) {
+        // Bryt bara vid en avslutad tagg, annars kapas en post mitt itu.
+        const c = t.lastIndexOf(">");
+        if (c < 0) { svans = t; continue; }
+        svans = t.slice(c + 1);
+        t = t.slice(0, c + 1);
+      } else svans = "";
+      sokIgenom(t);
     }
   }
 
@@ -241,7 +264,7 @@ async function importeraZip(fil) {
       sagXml = true;
       f.ondata = (e, data, sista) => {
         if (e) { felIStrom = e; return; }
-        skannaXml(dec.decode(data, { stream: !sista }), sista);
+        skannaXml(data, sista);
       };
       f.start();
       return;
@@ -249,7 +272,13 @@ async function importeraZip(fil) {
     const arHae = /(^|\/)HealthAutoExport-[^/]*\.csv$/i.test(namn)
       || /(^|\/)Workouts-[^/]*\.csv$/i.test(namn)
       || /-(?:Puls|Heart Rate)-\d{8}_\d{6}\.csv$/i.test(namn);
-    if (!arHae) return;   // GPX, rutter och export_cda hoppas över helt
+    if (!arHae) {
+      // Startas filen inte alls buffrar uppackningen den i väntan på besked.
+      // Att starta den och kasta bitarna direkt håller minnet nere.
+      f.ondata = () => {};
+      f.start();
+      return;
+    }
     const bitar = [];
     f.ondata = (e, data, sista) => {
       if (e) { felIStrom = e; return; }
@@ -268,7 +297,9 @@ async function importeraZip(fil) {
     f.start();
   };
 
-  const CH = 4 << 20;
+  // Små bitar in ger små bitar ut: uppackningen buffrar mindre, och
+  // framstegsvisningen blir jämnare.
+  const CH = 512 * 1024;
   let off = 0;
   while (off < fil.size) {
     const buf = new Uint8Array(await fil.slice(off, Math.min(off + CH, fil.size)).arrayBuffer());
